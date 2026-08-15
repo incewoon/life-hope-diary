@@ -29,19 +29,25 @@ function strokePath(stroke: Stroke, w: number): string {
   const outline = getStroke(
     stroke.points.map((p) => [p.x * w, p.y * w, p.pressure]),
     { size: stroke.width, thinning: 0.5, smoothing: 0.5, streamline: 0.5 },
-  );
+  ) as number[][];
   if (outline.length === 0) return "";
-  const d = outline.reduce<string[]>((acc, [x0, y0], i, arr) => {
-    const [x1, y1] = arr[(i + 1) % arr.length];
-    acc.push(`${x0.toFixed(2)},${y0.toFixed(2)}`, `Q`);
-    acc.push(
-      `${x0.toFixed(2)},${y0.toFixed(2)}`,
-      `${((x0 + x1) / 2).toFixed(2)},${((y0 + y1) / 2).toFixed(2)}`,
+  const parts: string[] = [];
+  for (let i = 0; i < outline.length; i++) {
+    const cur = outline[i] as number[];
+    const next = outline[(i + 1) % outline.length] as number[];
+    const x0 = cur[0] ?? 0;
+    const y0 = cur[1] ?? 0;
+    const x1 = next[0] ?? 0;
+    const y1 = next[1] ?? 0;
+    if (i === 0) parts.push(`M ${x0.toFixed(2)},${y0.toFixed(2)}`);
+    parts.push(
+      `Q ${x0.toFixed(2)},${y0.toFixed(2)} ${((x0 + x1) / 2).toFixed(2)},${((y0 + y1) / 2).toFixed(2)}`,
     );
-    return acc;
-  }, []);
-  return `M ${d.join(" ")} Z`;
+  }
+  parts.push("Z");
+  return parts.join(" ");
 }
+
 
 export function HandwritingCanvas({
   pageId,

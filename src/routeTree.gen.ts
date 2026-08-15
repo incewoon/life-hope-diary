@@ -18,6 +18,7 @@ import { Route as LinksRouteImport } from './routes/links'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as CalendarYearRouteImport } from './routes/calendar.$year'
 import { Route as MonthlyYearMonthRouteImport } from './routes/monthly.$year.$month'
+import { Route as DailyYearMonthDayRouteImport } from './routes/daily.$year.$month.$day'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const MonthlyYearMonthRoute = MonthlyYearMonthRouteImport.update({
   path: '/monthly/$year/$month',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DailyYearMonthDayRoute = DailyYearMonthDayRouteImport.update({
+  id: '/daily/$year/$month/$day',
+  path: '/daily/$year/$month/$day',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
   '/monthly/$year/$month': typeof MonthlyYearMonthRoute
+  '/daily/$year/$month/$day': typeof DailyYearMonthDayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
   '/monthly/$year/$month': typeof MonthlyYearMonthRoute
+  '/daily/$year/$month/$day': typeof DailyYearMonthDayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
   '/monthly/$year/$month': typeof MonthlyYearMonthRoute
+  '/daily/$year/$month/$day': typeof DailyYearMonthDayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/calendar/$year'
     | '/monthly/$year/$month'
+    | '/daily/$year/$month/$day'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/calendar/$year'
     | '/monthly/$year/$month'
+    | '/daily/$year/$month/$day'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/calendar/$year'
     | '/monthly/$year/$month'
+    | '/daily/$year/$month/$day'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -145,6 +157,7 @@ export interface RootRouteChildren {
   StrategyRoute: typeof StrategyRoute
   CalendarYearRoute: typeof CalendarYearRoute
   MonthlyYearMonthRoute: typeof MonthlyYearMonthRoute
+  DailyYearMonthDayRoute: typeof DailyYearMonthDayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MonthlyYearMonthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/daily/$year/$month/$day': {
+      id: '/daily/$year/$month/$day'
+      path: '/daily/$year/$month/$day'
+      fullPath: '/daily/$year/$month/$day'
+      preLoaderRoute: typeof DailyYearMonthDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -225,6 +245,7 @@ const rootRouteChildren: RootRouteChildren = {
   StrategyRoute: StrategyRoute,
   CalendarYearRoute: CalendarYearRoute,
   MonthlyYearMonthRoute: MonthlyYearMonthRoute,
+  DailyYearMonthDayRoute: DailyYearMonthDayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

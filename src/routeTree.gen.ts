@@ -17,6 +17,7 @@ import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as LinksRouteImport } from './routes/links'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as CalendarYearRouteImport } from './routes/calendar.$year'
+import { Route as MonthlyYearMonthRouteImport } from './routes/monthly.$year.$month'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const CalendarYearRoute = CalendarYearRouteImport.update({
   path: '/calendar/$year',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MonthlyYearMonthRoute = MonthlyYearMonthRouteImport.update({
+  id: '/monthly/$year/$month',
+  path: '/monthly/$year/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
+  '/monthly/$year/$month': typeof MonthlyYearMonthRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
+  '/monthly/$year/$month': typeof MonthlyYearMonthRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
+  '/monthly/$year/$month': typeof MonthlyYearMonthRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/links'
     | '/strategy'
     | '/calendar/$year'
+    | '/monthly/$year/$month'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/links'
     | '/strategy'
     | '/calendar/$year'
+    | '/monthly/$year/$month'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/links'
     | '/strategy'
     | '/calendar/$year'
+    | '/monthly/$year/$month'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   LinksRoute: typeof LinksRoute
   StrategyRoute: typeof StrategyRoute
   CalendarYearRoute: typeof CalendarYearRoute
+  MonthlyYearMonthRoute: typeof MonthlyYearMonthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -192,6 +205,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarYearRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/monthly/$year/$month': {
+      id: '/monthly/$year/$month'
+      path: '/monthly/$year/$month'
+      fullPath: '/monthly/$year/$month'
+      preLoaderRoute: typeof MonthlyYearMonthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   LinksRoute: LinksRoute,
   StrategyRoute: StrategyRoute,
   CalendarYearRoute: CalendarYearRoute,
+  MonthlyYearMonthRoute: MonthlyYearMonthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

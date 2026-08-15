@@ -16,6 +16,7 @@ import { Route as FamilyRouteImport } from './routes/family'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as LinksRouteImport } from './routes/links'
 import { Route as StrategyRouteImport } from './routes/strategy'
+import { Route as CalendarYearRouteImport } from './routes/calendar.$year'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const StrategyRoute = StrategyRouteImport.update({
   path: '/strategy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarYearRoute = CalendarYearRouteImport.update({
+  id: '/calendar/$year',
+  path: '/calendar/$year',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
+  '/calendar/$year': typeof CalendarYearRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
+  '/calendar/$year': typeof CalendarYearRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
+  '/calendar/$year': typeof CalendarYearRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/links'
     | '/strategy'
+    | '/calendar/$year'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/links'
     | '/strategy'
+    | '/calendar/$year'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/links'
     | '/strategy'
+    | '/calendar/$year'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   LinksRoute: typeof LinksRoute
   StrategyRoute: typeof StrategyRoute
+  CalendarYearRoute: typeof CalendarYearRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StrategyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calendar/$year': {
+      id: '/calendar/$year'
+      path: '/calendar/$year'
+      fullPath: '/calendar/$year'
+      preLoaderRoute: typeof CalendarYearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   LinksRoute: LinksRoute,
   StrategyRoute: StrategyRoute,
+  CalendarYearRoute: CalendarYearRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

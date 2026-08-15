@@ -64,11 +64,21 @@
 
 ## 기술 상세
 
-- `src/lib/db.ts`: Dexie 스키마 `pages` 테이블 (`id`, `type`, `textFields`, `strokes`, `updatedAt`), `meta` 테이블(선택 연도, 마지막 백업일).
+- `src/lib/db.ts`: Dexie 스키마 `pages` 테이블 — 스토어 정의 `id, type, updatedAt` (기본키 `id` + `type`·`updatedAt` 인덱스, 유형별/기간별 조회와 백업 성능용), `meta` 테이블(선택 연도, 마지막 백업일).
 - `PageData.id` 규칙: `daily-YYYY-MM-DD`, `monthly-YYYY-MM`, `meeting-{uuid}`, `note-{uuid}`, `contact-{uuid}`, `static-{slug}`.
-- 공용 컴포넌트: `HandwritingCanvas`(필기 레이어), `PenToolbar`, `PageShell`(헤더+아이콘바+필기 오버레이), `MiniCalendar`, `SaveIndicator`.
+- 공용 컴포넌트: `HandwritingCanvas`(필기 영역), `PenToolbar`, `PageShell`(헤더+아이콘바), `MiniCalendar`, `SaveIndicator`.
 - 모든 페이지는 클라이언트 전용 렌더링(IndexedDB 접근은 마운트 후), 최신 실험적 브라우저 API 미사용 — 구형 WebView 호환.
 - 지도 이미지는 정적 일러스트 자산으로 생성해 사용(외부 지도 API 없음).
+
+## Capacitor 흰 화면(White Screen) 사전 대응
+
+Capacitor는 서버 없이 로컬 파일에서 앱을 띄우기 때문에, 서버 렌더링에 의존하는 진입 HTML이 없으면 흰 화면만 뜹니다. 웹 개발 단계부터 다음을 지킵니다.
+
+- 모든 라우트를 **데이터 로더 없는 클라이언트 렌더링**으로 작성(서버 함수·서버 라우트 0개, 모든 데이터는 IndexedDB). 서버가 없어도 첫 화면이 그려지는 상태를 유지.
+- 초기 진입은 항상 `/`(표지)에서 시작하고, 딥링크는 해시/클라이언트 라우팅으로도 복구 가능하게 구성.
+- 라우트 경로에 존재하지 않는 URL이 와도 404 화면이 뜨도록 클라이언트 not-found 처리.
+- 빌드 산출물의 진입 HTML·JS 엔트리 경로를 README에 문서화하고, 추후 Capacitor 전용 정적 빌드(별도 스크립트/설정)로 갈아끼우기 쉽게 웹 자산과 앱 로직을 분리. 네이티브 전용 분기가 필요한 코드(백업 파일 I/O 등)는 이미 모듈로 격리되어 있습니다.
+
 
 ## 개발 순서
 

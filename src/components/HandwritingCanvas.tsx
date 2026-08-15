@@ -18,9 +18,9 @@ interface Props {
   pageType: PageType;
   /** 모눈 배경 */
   grid?: boolean;
-  className?: string;
+  className?: string | undefined;
   minHeight?: number;
-  label?: string;
+  label?: string | undefined;
 }
 
 const MAX_HISTORY = 20;
@@ -290,7 +290,7 @@ function CanvasToolbar({
   onRedo,
   onClear,
 }: {
-  label?: string;
+  label?: string | undefined;
   status: "idle" | "saving" | "saved";
   onUndo: () => void;
   onRedo: () => void;

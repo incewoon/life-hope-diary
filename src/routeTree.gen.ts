@@ -10,33 +10,206 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as ContactsRouteImport } from './routes/contacts'
+import { Route as ContentsRouteImport } from './routes/contents'
+import { Route as FamilyRouteImport } from './routes/family'
+import { Route as GoalsRouteImport } from './routes/goals'
+import { Route as LinksRouteImport } from './routes/links'
+import { Route as MeetingsRouteImport } from './routes/meetings'
+import { Route as NotesRouteImport } from './routes/notes'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StrategyRouteImport } from './routes/strategy'
+import { Route as CalendarYearRouteImport } from './routes/calendar.$year'
+import { Route as MonthlyYearMonthRouteImport } from './routes/monthly.$year.$month'
+import { Route as DailyYearMonthDayRouteImport } from './routes/daily.$year.$month.$day'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactsRoute = ContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContentsRoute = ContentsRouteImport.update({
+  id: '/contents',
+  path: '/contents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamilyRoute = FamilyRouteImport.update({
+  id: '/family',
+  path: '/family',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoalsRoute = GoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinksRoute = LinksRouteImport.update({
+  id: '/links',
+  path: '/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeetingsRoute = MeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotesRoute = NotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StrategyRoute = StrategyRouteImport.update({
+  id: '/strategy',
+  path: '/strategy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarYearRoute = CalendarYearRouteImport.update({
+  id: '/calendar/$year',
+  path: '/calendar/$year',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MonthlyYearMonthRoute = MonthlyYearMonthRouteImport.update({
+  id: '/monthly/$year/$month',
+  path: '/monthly/$year/$month',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyYearMonthDayRoute = DailyYearMonthDayRouteImport.update({
+  id: '/daily/$year/$month/$day',
+  path: '/daily/$year/$month/$day',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/compliance': typeof ComplianceRoute
+  '/contacts': typeof ContactsRoute
+  '/contents': typeof ContentsRoute
+  '/family': typeof FamilyRoute
+  '/goals': typeof GoalsRoute
+  '/links': typeof LinksRoute
+  '/meetings': typeof MeetingsRoute
+  '/notes': typeof NotesRoute
+  '/settings': typeof SettingsRoute
+  '/strategy': typeof StrategyRoute
+  '/calendar/$year': typeof CalendarYearRoute
+  '/monthly/$year/$month': typeof MonthlyYearMonthRoute
+  '/daily/$year/$month/$day': typeof DailyYearMonthDayRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compliance': typeof ComplianceRoute
+  '/contacts': typeof ContactsRoute
+  '/contents': typeof ContentsRoute
+  '/family': typeof FamilyRoute
+  '/goals': typeof GoalsRoute
+  '/links': typeof LinksRoute
+  '/meetings': typeof MeetingsRoute
+  '/notes': typeof NotesRoute
+  '/settings': typeof SettingsRoute
+  '/strategy': typeof StrategyRoute
+  '/calendar/$year': typeof CalendarYearRoute
+  '/monthly/$year/$month': typeof MonthlyYearMonthRoute
+  '/daily/$year/$month/$day': typeof DailyYearMonthDayRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/compliance': typeof ComplianceRoute
+  '/contacts': typeof ContactsRoute
+  '/contents': typeof ContentsRoute
+  '/family': typeof FamilyRoute
+  '/goals': typeof GoalsRoute
+  '/links': typeof LinksRoute
+  '/meetings': typeof MeetingsRoute
+  '/notes': typeof NotesRoute
+  '/settings': typeof SettingsRoute
+  '/strategy': typeof StrategyRoute
+  '/calendar/$year': typeof CalendarYearRoute
+  '/monthly/$year/$month': typeof MonthlyYearMonthRoute
+  '/daily/$year/$month/$day': typeof DailyYearMonthDayRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/compliance'
+    | '/contacts'
+    | '/contents'
+    | '/family'
+    | '/goals'
+    | '/links'
+    | '/meetings'
+    | '/notes'
+    | '/settings'
+    | '/strategy'
+    | '/calendar/$year'
+    | '/monthly/$year/$month'
+    | '/daily/$year/$month/$day'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/compliance'
+    | '/contacts'
+    | '/contents'
+    | '/family'
+    | '/goals'
+    | '/links'
+    | '/meetings'
+    | '/notes'
+    | '/settings'
+    | '/strategy'
+    | '/calendar/$year'
+    | '/monthly/$year/$month'
+    | '/daily/$year/$month/$day'
+  id:
+    | '__root__'
+    | '/'
+    | '/compliance'
+    | '/contacts'
+    | '/contents'
+    | '/family'
+    | '/goals'
+    | '/links'
+    | '/meetings'
+    | '/notes'
+    | '/settings'
+    | '/strategy'
+    | '/calendar/$year'
+    | '/monthly/$year/$month'
+    | '/daily/$year/$month/$day'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ComplianceRoute: typeof ComplianceRoute
+  ContactsRoute: typeof ContactsRoute
+  ContentsRoute: typeof ContentsRoute
+  FamilyRoute: typeof FamilyRoute
+  GoalsRoute: typeof GoalsRoute
+  LinksRoute: typeof LinksRoute
+  MeetingsRoute: typeof MeetingsRoute
+  NotesRoute: typeof NotesRoute
+  SettingsRoute: typeof SettingsRoute
+  StrategyRoute: typeof StrategyRoute
+  CalendarYearRoute: typeof CalendarYearRoute
+  MonthlyYearMonthRoute: typeof MonthlyYearMonthRoute
+  DailyYearMonthDayRoute: typeof DailyYearMonthDayRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +221,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contacts': {
+      id: '/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof ContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contents': {
+      id: '/contents'
+      path: '/contents'
+      fullPath: '/contents'
+      preLoaderRoute: typeof ContentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/family': {
+      id: '/family'
+      path: '/family'
+      fullPath: '/family'
+      preLoaderRoute: typeof FamilyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/goals': {
+      id: '/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof GoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/links': {
+      id: '/links'
+      path: '/links'
+      fullPath: '/links'
+      preLoaderRoute: typeof LinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meetings': {
+      id: '/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof MeetingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/strategy': {
+      id: '/strategy'
+      path: '/strategy'
+      fullPath: '/strategy'
+      preLoaderRoute: typeof StrategyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar/$year': {
+      id: '/calendar/$year'
+      path: '/calendar/$year'
+      fullPath: '/calendar/$year'
+      preLoaderRoute: typeof CalendarYearRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/monthly/$year/$month': {
+      id: '/monthly/$year/$month'
+      path: '/monthly/$year/$month'
+      fullPath: '/monthly/$year/$month'
+      preLoaderRoute: typeof MonthlyYearMonthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily/$year/$month/$day': {
+      id: '/daily/$year/$month/$day'
+      path: '/daily/$year/$month/$day'
+      fullPath: '/daily/$year/$month/$day'
+      preLoaderRoute: typeof DailyYearMonthDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ComplianceRoute: ComplianceRoute,
+  ContactsRoute: ContactsRoute,
+  ContentsRoute: ContentsRoute,
+  FamilyRoute: FamilyRoute,
+  GoalsRoute: GoalsRoute,
+  LinksRoute: LinksRoute,
+  MeetingsRoute: MeetingsRoute,
+  NotesRoute: NotesRoute,
+  SettingsRoute: SettingsRoute,
+  StrategyRoute: StrategyRoute,
+  CalendarYearRoute: CalendarYearRoute,
+  MonthlyYearMonthRoute: MonthlyYearMonthRoute,
+  DailyYearMonthDayRoute: DailyYearMonthDayRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContentsRouteImport } from './routes/contents'
+import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as StrategyRouteImport } from './routes/strategy'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const ContentsRoute = ContentsRouteImport.update({
   path: '/contents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoalsRoute = GoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StrategyRoute = StrategyRouteImport.update({
   id: '/strategy',
   path: '/strategy',
@@ -32,30 +38,34 @@ const StrategyRoute = StrategyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contents': typeof ContentsRoute
+  '/goals': typeof GoalsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contents': typeof ContentsRoute
+  '/goals': typeof GoalsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/contents': typeof ContentsRoute
+  '/goals': typeof GoalsRoute
   '/strategy': typeof StrategyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/contents' | '/strategy'
+  fullPaths: '/' | '/contents' | '/goals' | '/strategy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/contents' | '/strategy'
-  id: '__root__' | '/' | '/contents' | '/strategy'
+  to: '/' | '/contents' | '/goals' | '/strategy'
+  id: '__root__' | '/' | '/contents' | '/goals' | '/strategy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContentsRoute: typeof ContentsRoute
+  GoalsRoute: typeof GoalsRoute
   StrategyRoute: typeof StrategyRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/goals': {
+      id: '/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof GoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/strategy': {
       id: '/strategy'
       path: '/strategy'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContentsRoute: ContentsRoute,
+  GoalsRoute: GoalsRoute,
   StrategyRoute: StrategyRoute,
 }
 export const routeTree = rootRouteImport

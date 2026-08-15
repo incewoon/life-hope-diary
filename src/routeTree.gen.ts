@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ComplianceRouteImport } from './routes/compliance'
 import { Route as ContentsRouteImport } from './routes/contents'
+import { Route as FamilyRouteImport } from './routes/family'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as LinksRouteImport } from './routes/links'
 import { Route as StrategyRouteImport } from './routes/strategy'
@@ -29,6 +30,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
 const ContentsRoute = ContentsRouteImport.update({
   id: '/contents',
   path: '/contents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FamilyRoute = FamilyRouteImport.update({
+  id: '/family',
+  path: '/family',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoalsRoute = GoalsRouteImport.update({
@@ -51,6 +57,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
   '/contents': typeof ContentsRoute
+  '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
   '/contents': typeof ContentsRoute
+  '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
@@ -68,6 +76,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/compliance': typeof ComplianceRoute
   '/contents': typeof ContentsRoute
+  '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
   '/strategy': typeof StrategyRoute
@@ -75,14 +84,28 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/compliance' | '/contents' | '/goals' | '/links' | '/strategy'
+    | '/'
+    | '/compliance'
+    | '/contents'
+    | '/family'
+    | '/goals'
+    | '/links'
+    | '/strategy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/compliance' | '/contents' | '/goals' | '/links' | '/strategy'
+  to:
+    | '/'
+    | '/compliance'
+    | '/contents'
+    | '/family'
+    | '/goals'
+    | '/links'
+    | '/strategy'
   id:
     | '__root__'
     | '/'
     | '/compliance'
     | '/contents'
+    | '/family'
     | '/goals'
     | '/links'
     | '/strategy'
@@ -92,6 +115,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ComplianceRoute: typeof ComplianceRoute
   ContentsRoute: typeof ContentsRoute
+  FamilyRoute: typeof FamilyRoute
   GoalsRoute: typeof GoalsRoute
   LinksRoute: typeof LinksRoute
   StrategyRoute: typeof StrategyRoute
@@ -118,6 +142,13 @@ declare module '@tanstack/react-router' {
       path: '/contents'
       fullPath: '/contents'
       preLoaderRoute: typeof ContentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/family': {
+      id: '/family'
+      path: '/family'
+      fullPath: '/family'
+      preLoaderRoute: typeof FamilyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/goals': {
@@ -148,6 +179,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ComplianceRoute: ComplianceRoute,
   ContentsRoute: ContentsRoute,
+  FamilyRoute: FamilyRoute,
   GoalsRoute: GoalsRoute,
   LinksRoute: LinksRoute,
   StrategyRoute: StrategyRoute,

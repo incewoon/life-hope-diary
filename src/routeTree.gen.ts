@@ -15,6 +15,7 @@ import { Route as ContentsRouteImport } from './routes/contents'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as LinksRouteImport } from './routes/links'
+import { Route as MeetingsRouteImport } from './routes/meetings'
 import { Route as NotesRouteImport } from './routes/notes'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StrategyRouteImport } from './routes/strategy'
@@ -50,6 +51,11 @@ const GoalsRoute = GoalsRouteImport.update({
 const LinksRoute = LinksRouteImport.update({
   id: '/links',
   path: '/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeetingsRoute = MeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesRoute = NotesRouteImport.update({
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
+  '/meetings': typeof MeetingsRoute
   '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/strategy': typeof StrategyRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
+  '/meetings': typeof MeetingsRoute
   '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/strategy': typeof StrategyRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
+  '/meetings': typeof MeetingsRoute
   '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/strategy': typeof StrategyRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/goals'
     | '/links'
+    | '/meetings'
     | '/notes'
     | '/settings'
     | '/strategy'
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/goals'
     | '/links'
+    | '/meetings'
     | '/notes'
     | '/settings'
     | '/strategy'
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/goals'
     | '/links'
+    | '/meetings'
     | '/notes'
     | '/settings'
     | '/strategy'
@@ -178,6 +190,7 @@ export interface RootRouteChildren {
   FamilyRoute: typeof FamilyRoute
   GoalsRoute: typeof GoalsRoute
   LinksRoute: typeof LinksRoute
+  MeetingsRoute: typeof MeetingsRoute
   NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
   StrategyRoute: typeof StrategyRoute
@@ -228,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/links'
       fullPath: '/links'
       preLoaderRoute: typeof LinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meetings': {
+      id: '/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof MeetingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes': {
@@ -282,6 +302,7 @@ const rootRouteChildren: RootRouteChildren = {
   FamilyRoute: FamilyRoute,
   GoalsRoute: GoalsRoute,
   LinksRoute: LinksRoute,
+  MeetingsRoute: MeetingsRoute,
   NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
   StrategyRoute: StrategyRoute,

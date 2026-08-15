@@ -252,6 +252,33 @@ export function HandwritingCanvas({
     flushReplace();
   };
 
+  if (overlay) {
+    return (
+      <div className="pointer-events-none absolute inset-0 z-20">
+        <div className="pointer-events-auto sticky top-2 z-30 mx-auto w-fit max-w-full overflow-x-auto">
+          <CanvasToolbar
+            label={label}
+            status={status}
+            onUndo={undo}
+            onRedo={redo}
+            onClear={clearAll}
+          />
+        </div>
+        <div ref={containerRef} className="absolute inset-0">
+          <canvas
+            ref={canvasRef}
+            className="pointer-events-auto absolute inset-0 touch-none"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            onPointerLeave={onPointerUp}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <section className={cn("flex flex-col gap-2", className)}>
       <CanvasToolbar
@@ -282,6 +309,7 @@ export function HandwritingCanvas({
     </section>
   );
 }
+
 
 function CanvasToolbar({
   label,

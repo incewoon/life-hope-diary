@@ -21,6 +21,8 @@ interface Props {
   className?: string | undefined;
   minHeight?: number;
   label?: string | undefined;
+  /** 콘텐츠 위에 겹치는 전면 필기 레이어 (입력 필드가 없는 페이지 전용) */
+  overlay?: boolean;
 }
 
 const MAX_HISTORY = 20;
@@ -56,6 +58,7 @@ export function HandwritingCanvas({
   className,
   minHeight = 320,
   label,
+  overlay = false,
 }: Props) {
   const { tool, color, width } = usePen();
   const containerRef = useRef<HTMLDivElement | null>(null);

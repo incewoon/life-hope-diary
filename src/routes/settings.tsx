@@ -40,7 +40,7 @@ function SettingsPage() {
       const file = await readBackupFromDevice();
       if (!file) return;
       const result = await applyBackup(file);
-      toast.success(`추가 ${result.added}건 · 갱신 ${result.updated}건 복원되었습니다.`);
+      toast.success(`${result.applied}개 페이지를 복원했습니다.`);
     } catch {
       toast.error("가져오기에 실패했습니다. 파일 형식을 확인하세요.");
     } finally {

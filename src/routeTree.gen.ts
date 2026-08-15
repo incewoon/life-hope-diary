@@ -15,6 +15,7 @@ import { Route as ContentsRouteImport } from './routes/contents'
 import { Route as FamilyRouteImport } from './routes/family'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as LinksRouteImport } from './routes/links'
+import { Route as NotesRouteImport } from './routes/notes'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StrategyRouteImport } from './routes/strategy'
 import { Route as CalendarYearRouteImport } from './routes/calendar.$year'
@@ -51,6 +52,11 @@ const LinksRoute = LinksRouteImport.update({
   path: '/links',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotesRoute = NotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
+  '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
+  '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/family': typeof FamilyRoute
   '/goals': typeof GoalsRoute
   '/links': typeof LinksRoute
+  '/notes': typeof NotesRoute
   '/settings': typeof SettingsRoute
   '/strategy': typeof StrategyRoute
   '/calendar/$year': typeof CalendarYearRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/goals'
     | '/links'
+    | '/notes'
     | '/settings'
     | '/strategy'
     | '/calendar/$year'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/goals'
     | '/links'
+    | '/notes'
     | '/settings'
     | '/strategy'
     | '/calendar/$year'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/family'
     | '/goals'
     | '/links'
+    | '/notes'
     | '/settings'
     | '/strategy'
     | '/calendar/$year'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   FamilyRoute: typeof FamilyRoute
   GoalsRoute: typeof GoalsRoute
   LinksRoute: typeof LinksRoute
+  NotesRoute: typeof NotesRoute
   SettingsRoute: typeof SettingsRoute
   StrategyRoute: typeof StrategyRoute
   CalendarYearRoute: typeof CalendarYearRoute
@@ -217,6 +230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LinksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notes': {
+      id: '/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof NotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   FamilyRoute: FamilyRoute,
   GoalsRoute: GoalsRoute,
   LinksRoute: LinksRoute,
+  NotesRoute: NotesRoute,
   SettingsRoute: SettingsRoute,
   StrategyRoute: StrategyRoute,
   CalendarYearRoute: CalendarYearRoute,

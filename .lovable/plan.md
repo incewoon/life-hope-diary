@@ -39,7 +39,7 @@ type ChecklistItem = {
 
 ## 6. Family 개인 Office 정보
 
-`family.tsx` 지역본부 목록 아래에 부서·전화·팩스·이메일·주소 입력 섹션을 추가하고 `usePageText("static-family", "static")`로 저장·복원합니다. 필기 오버레이는 현행 유지.
+`family.tsx` 지역본부 목록 아래에 부서·전화·팩스·이메일·주소 입력 섹션을 추가하고 `usePageText("static-family", "static")`로 저장·복원합니다. 같은 pageId를 필기 오버레이가 함께 쓰지만, `saveTextFields`는 `textFields`만, `appendStrokes`/`replaceStrokes`는 `strokes`만 갱신하므로 서로 덮어쓰지 않습니다(구현 중 재확인). 필기 오버레이는 현행 유지.
 
 ## 7. 백업 가져오기 ambiguous 처리
 

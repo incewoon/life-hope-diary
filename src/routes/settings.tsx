@@ -3,7 +3,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageShell } from "@/components/PageShell";
-import { applyBackup, exportBackup, readBackupFromDevice } from "@/lib/backup/backup";
+import {
+  applyBackup,
+  exportBackup,
+  readBackupFromDevice,
+  resolveAmbiguous,
+  type MergePlan,
+} from "@/lib/backup/backup";
+import type { PageData } from "@/lib/db";
 import { useSelectedYear } from "@/lib/year";
 
 export const Route = createFileRoute("/settings")({
@@ -18,9 +25,15 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("ko-KR");
+}
+
 function SettingsPage() {
   const { year } = useSelectedYear();
   const [busy, setBusy] = useState(false);
+  const [ambiguous, setAmbiguous] = useState<MergePlan["ambiguous"]>([]);
 
   const handleExport = async (scope: number | "all") => {
     setBusy(true);
@@ -41,12 +54,28 @@ function SettingsPage() {
       if (!file) return;
       const result = await applyBackup(file);
       toast.success(`${result.applied}개 페이지를 복원했습니다.`);
+      if (result.plan.ambiguous.length > 0) setAmbiguous(result.plan.ambiguous);
     } catch {
       toast.error("가져오기에 실패했습니다. 파일 형식을 확인하세요.");
     } finally {
       setBusy(false);
     }
   };
+
+  const handleOverwrite = async () => {
+    const pages: PageData[] = ambiguous.map((a) => a.incoming);
+    setBusy(true);
+    try {
+      await resolveAmbiguous(pages);
+      toast.success(`${pages.length}개 페이지를 백업 파일 내용으로 덮어썼습니다.`);
+      setAmbiguous([]);
+    } catch {
+      toast.error("덮어쓰기에 실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   return (
     <PageShell title="설정 · 백업" subtitle="모든 데이터는 이 기기에만 저장됩니다">

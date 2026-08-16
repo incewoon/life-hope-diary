@@ -118,6 +118,53 @@ function SettingsPage() {
           파일 선택해 복원
         </button>
       </section>
+
+      {ambiguous.length > 0 ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="병합 확인 필요"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
+        >
+          <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-1 text-base font-semibold text-foreground">
+              어느 쪽을 남길지 확인이 필요합니다
+            </h2>
+            <p className="mb-3 text-sm text-muted-foreground">
+              아래 {ambiguous.length}개 페이지는 자동으로 판단할 수 없어 그대로 두었습니다.
+            </p>
+            <ul className="mb-4 flex flex-col gap-2">
+              {ambiguous.map(({ incoming, local }) => (
+                <li key={incoming.id} className="rounded-xl border border-border p-3 text-xs">
+                  <p className="font-medium text-foreground">{incoming.id}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    기기: {formatTime(local.updatedAt)}
+                  </p>
+                  <p className="text-muted-foreground">백업: {formatTime(incoming.updatedAt)}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setAmbiguous([])}
+                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50"
+              >
+                기존 데이터 유지
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleOverwrite()}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              >
+                백업 파일로 덮어쓰기
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </PageShell>
   );
 }

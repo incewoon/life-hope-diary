@@ -12,6 +12,7 @@ import { type ReactNode } from "react";
 
 import { BackupReminder } from "@/components/BackupReminder";
 import { cn } from "@/lib/utils";
+import { useSelectedYear } from "@/lib/year";
 
 interface NavItem {
   to: string;

@@ -8,7 +8,7 @@
 
 ## 2. 퀵 네비게이션 달력 링크
 
-`PageShell`의 NAV에서 "달력" 항목만 `useSelectedYear()`의 연도를 사용해 `/calendar/$year`로 이동하도록 분리 처리합니다(나머지 항목은 그대로).
+`PageShell`의 NAV에서 "달력" 항목만 분리 처리합니다. `useSelectedYear()`의 year를 써서 `to="/calendar/$year"` + `params={{ year: String(year) }}` 형태로 작성하며, 문자열 연결(`/calendar/${year}`)은 쓰지 않습니다. 나머지 항목은 그대로 둡니다.
 
 ## 3. 일간 페이지 이전/다음 이동
 

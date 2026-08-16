@@ -3,7 +3,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageShell } from "@/components/PageShell";
-import { applyBackup, exportBackup, readBackupFromDevice } from "@/lib/backup/backup";
+import {
+  applyBackup,
+  exportBackup,
+  readBackupFromDevice,
+  resolveAmbiguous,
+  type MergePlan,
+} from "@/lib/backup/backup";
+import type { PageData } from "@/lib/db";
 import { useSelectedYear } from "@/lib/year";
 
 export const Route = createFileRoute("/settings")({
@@ -18,9 +25,15 @@ export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString("ko-KR");
+}
+
 function SettingsPage() {
   const { year } = useSelectedYear();
   const [busy, setBusy] = useState(false);
+  const [ambiguous, setAmbiguous] = useState<MergePlan["ambiguous"]>([]);
 
   const handleExport = async (scope: number | "all") => {
     setBusy(true);
@@ -41,12 +54,28 @@ function SettingsPage() {
       if (!file) return;
       const result = await applyBackup(file);
       toast.success(`${result.applied}개 페이지를 복원했습니다.`);
+      if (result.plan.ambiguous.length > 0) setAmbiguous(result.plan.ambiguous);
     } catch {
       toast.error("가져오기에 실패했습니다. 파일 형식을 확인하세요.");
     } finally {
       setBusy(false);
     }
   };
+
+  const handleOverwrite = async () => {
+    const pages: PageData[] = ambiguous.map((a) => a.incoming);
+    setBusy(true);
+    try {
+      await resolveAmbiguous(pages);
+      toast.success(`${pages.length}개 페이지를 백업 파일 내용으로 덮어썼습니다.`);
+      setAmbiguous([]);
+    } catch {
+      toast.error("덮어쓰기에 실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   return (
     <PageShell title="설정 · 백업" subtitle="모든 데이터는 이 기기에만 저장됩니다">
@@ -89,6 +118,53 @@ function SettingsPage() {
           파일 선택해 복원
         </button>
       </section>
+
+      {ambiguous.length > 0 ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="병합 확인 필요"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
+        >
+          <div className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5">
+            <h2 className="mb-1 text-base font-semibold text-foreground">
+              어느 쪽을 남길지 확인이 필요합니다
+            </h2>
+            <p className="mb-3 text-sm text-muted-foreground">
+              아래 {ambiguous.length}개 페이지는 자동으로 판단할 수 없어 그대로 두었습니다.
+            </p>
+            <ul className="mb-4 flex flex-col gap-2">
+              {ambiguous.map(({ incoming, local }) => (
+                <li key={incoming.id} className="rounded-xl border border-border p-3 text-xs">
+                  <p className="font-medium text-foreground">{incoming.id}</p>
+                  <p className="mt-1 text-muted-foreground">
+                    기기: {formatTime(local.updatedAt)}
+                  </p>
+                  <p className="text-muted-foreground">백업: {formatTime(incoming.updatedAt)}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setAmbiguous([])}
+                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50"
+              >
+                기존 데이터 유지
+              </button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleOverwrite()}
+                className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              >
+                백업 파일로 덮어쓰기
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </PageShell>
   );
 }

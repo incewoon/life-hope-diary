@@ -1,4 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { addDays, format, subDays } from "date-fns";
+import { ko } from "date-fns/locale";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { HandwritingCanvas } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
@@ -17,6 +20,14 @@ export const Route = createFileRoute("/daily/$year/$month/$day")({
   component: DailyPage,
 });
 
+function dayParams(date: Date) {
+  return {
+    year: String(date.getFullYear()),
+    month: String(date.getMonth() + 1).padStart(2, "0"),
+    day: String(date.getDate()).padStart(2, "0"),
+  };
+}
+
 function DailyPage() {
   const { year, month, day } = Route.useParams();
   const y = Number(year);
@@ -25,12 +36,36 @@ function DailyPage() {
   const id = dailyId(y, m, d);
   const { fields, setField, status } = usePageText(id, "daily");
 
+  const current = new Date(y, m - 1, d);
+  const prev = subDays(current, 1);
+  const next = addDays(current, 1);
+
   return (
     <PageShell
       title={`${y}년 ${m}월 ${d}일`}
       subtitle={status === "saving" ? "저장 중…" : status === "saved" ? "저장됨" : "일간 플랜"}
       wide
     >
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <Link
+          to="/daily/$year/$month/$day"
+          params={dayParams(prev)}
+          className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground"
+        >
+          <ChevronLeft className="size-4" />
+          {format(prev, "M월 d일 (E)", { locale: ko })}
+        </Link>
+        <Link
+          to="/daily/$year/$month/$day"
+          params={dayParams(next)}
+          className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground"
+        >
+          {format(next, "M월 d일 (E)", { locale: ko })}
+          <ChevronRight className="size-4" />
+        </Link>
+      </div>
+
+
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         {(["오늘의 목표", "핵심 일정", "체크 사항"] as const).map((k) => (
           <label key={k} className="block">

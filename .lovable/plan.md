@@ -8,11 +8,11 @@
 
 ## 2. 퀵 네비게이션 달력 링크
 
-`PageShell`의 NAV에서 "달력" 항목만 `useSelectedYear()`의 연도를 사용해 `/calendar/$year`로 이동하도록 분리 처리합니다(나머지 항목은 그대로).
+`PageShell`의 NAV에서 "달력" 항목만 분리 처리합니다. `useSelectedYear()`의 year를 써서 `to="/calendar/$year"` + `params={{ year: String(year) }}` 형태로 작성하며, 문자열 연결(`/calendar/${year}`)은 쓰지 않습니다. 나머지 항목은 그대로 둡니다.
 
 ## 3. 일간 페이지 이전/다음 이동
 
-`daily.$year.$month.$day.tsx` 상단에 좌우 이동 버튼을 추가합니다. date-fns의 `addDays`/`subDays`로 계산해 월·연 경계도 정확히 처리하고, 버튼에는 전날/다음날 날짜(예: 8월 14일 (목))를 작게 표시합니다. 이동은 `Link to="/daily/$year/$month/$day"` + `params`로 처리하여 URL과 데이터(`dailyId`)가 항상 동기화됩니다.
+`daily.$year.$month.$day.tsx` 상단에 좌우 이동 버튼을 추가합니다. date-fns의 `addDays`/`subDays`로 계산하고, 버튼에는 전날/다음날 날짜(예: 8월 14일 (목))를 작게 표시합니다. 이동은 `Link to="/daily/$year/$month/$day"`에 계산된 연·월·일을 **모두** `params`로 넘겨 처리합니다(예: 12월 31일 → 1월 1일처럼 연도가 바뀌는 경우에도 `$year`가 함께 갱신되어야 하므로 year를 고정하지 않습니다). 결과적으로 URL과 데이터(`dailyId`)가 항상 동기화됩니다.
 
 ## 4. 회의록 / 노트 / 연락처 다중 문서화
 
@@ -20,17 +20,26 @@ year 기준 단일 페이지 방식을 없애고 목록 + 상세 패턴으로 �
 
 - 회의록: 좌측 목록(추가/삭제/선택) + 우측 상세(회의명, 일시/장소, 참석자 입력 + 필기 캔버스)
 - 자유 노트: 목록(추가/삭제/이름 변경) + 선택 노트의 필기 캔버스
-- 연락처: 카드 그리드. 각 카드에 성명·소속·직위직급·연락처 입력 + 메모 필기 영역, 카드 추가/삭제
+- 연락처: 회의록·노트와 동일한 "목록 + 선택 상세" 패턴으로 통일합니다. 목록은 카드 그리드이며 카드에는 성명·소속·직위직급·연락처 텍스트 필드만 표시하고, 카드를 선택했을 때만 하단에 해당 카드의 필기 캔버스 1개를 렌더링합니다(카드마다 캔버스를 동시에 렌더링하지 않아 저사양 태블릿에서도 성능 저하가 없습니다). 카드 추가/삭제 지원.
 
 선택된 문서 id는 URL 검색 파라미터(`?id=`)로 유지해 새로고침·뒤로가기에서도 같은 문서가 열립니다.
 
 ## 5. 월간 CHECK LIST
 
-`monthly.$year.$month.tsx`에 체크리스트 영역을 추가합니다. 항목 추가/삭제/체크 토글이 가능하며, 데이터는 해당 월 페이지의 `textFields.checklist`에 JSON 문자열로 저장됩니다(스키마 변경 없음). 레이아웃은 달력 / 체크리스트 / 필기 NOTE 3분할.
+`monthly.$year.$month.tsx`에 체크리스트 영역을 추가합니다. 항목 추가/삭제/체크 토글이 가능하며, 데이터는 해당 월 페이지의 `textFields.checklist`에 아래 구조를 엄격히 지켜 JSON 문자열로 저장합니다(스키마 변경 없음). 파싱에 실패하거나 배열이 아니면 빈 배열로 fallback 합니다. 레이아웃은 달력 / 체크리스트 / 필기 NOTE 3분할.
+
+```ts
+type ChecklistItem = {
+  id: string;      // 고유 id (타임스탬프 + 랜덤)
+  text: string;
+  checked: boolean;
+};
+// textFields.checklist = JSON.stringify(ChecklistItem[])
+```
 
 ## 6. Family 개인 Office 정보
 
-`family.tsx` 지역본부 목록 아래에 부서·전화·팩스·이메일·주소 입력 섹션을 추가하고 `usePageText("static-family", "static")`로 저장·복원합니다. 필기 오버레이는 현행 유지.
+`family.tsx` 지역본부 목록 아래에 부서·전화·팩스·이메일·주소 입력 섹션을 추가하고 `usePageText("static-family", "static")`로 저장·복원합니다. 같은 pageId를 필기 오버레이가 함께 쓰지만, `saveTextFields`는 `textFields`만, `appendStrokes`/`replaceStrokes`는 `strokes`만 갱신하므로 서로 덮어쓰지 않습니다(구현 중 재확인). 필기 오버레이는 현행 유지.
 
 ## 7. 백업 가져오기 ambiguous 처리
 
@@ -45,5 +54,5 @@ year 기준 단일 페이지 방식을 없애고 목록 + 상세 패턴으로 �
 ## 기술 메모
 
 - DB 스키마(`pages`, `meta`)는 변경 없음 — 다중 문서는 이미 지원되는 `type` 인덱스를 사용합니다.
-- 기존 year-scoped 데이터(`meeting-2026`, `note-2026`, `contact-2026`)는 목록에 그대로 노출되어 유실되지 않습니다.
+- 기존 year-scoped 데이터(`meeting-2026`, `note-2026`, `contact-2026`)는 목록에 그대로 노출되어 유실되지 않습니다. 제목이 비어 있으면 id의 연도를 읽어 "(이전 데이터) 2026년 회의록 / 노트 / 연락처"를 표시용 기본 제목으로 붙이고, 사용자가 언제든 이름을 바꿀 수 있게 둡니다.
 - 새 라우트 파일 추가 없이 기존 `meetings.tsx` / `notes.tsx` / `contacts.tsx` 내부에서 목록·상세를 함께 렌더링합니다.

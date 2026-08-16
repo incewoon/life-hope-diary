@@ -12,7 +12,7 @@
 
 ## 3. 일간 페이지 이전/다음 이동
 
-`daily.$year.$month.$day.tsx` 상단에 좌우 이동 버튼을 추가합니다. date-fns의 `addDays`/`subDays`로 계산해 월·연 경계도 정확히 처리하고, 버튼에는 전날/다음날 날짜(예: 8월 14일 (목))를 작게 표시합니다. 이동은 `Link to="/daily/$year/$month/$day"` + `params`로 처리하여 URL과 데이터(`dailyId`)가 항상 동기화됩니다.
+`daily.$year.$month.$day.tsx` 상단에 좌우 이동 버튼을 추가합니다. date-fns의 `addDays`/`subDays`로 계산하고, 버튼에는 전날/다음날 날짜(예: 8월 14일 (목))를 작게 표시합니다. 이동은 `Link to="/daily/$year/$month/$day"`에 계산된 연·월·일을 **모두** `params`로 넘겨 처리합니다(예: 12월 31일 → 1월 1일처럼 연도가 바뀌는 경우에도 `$year`가 함께 갱신되어야 하므로 year를 고정하지 않습니다). 결과적으로 URL과 데이터(`dailyId`)가 항상 동기화됩니다.
 
 ## 4. 회의록 / 노트 / 연락처 다중 문서화
 

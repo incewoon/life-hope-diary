@@ -26,7 +26,16 @@ year 기준 단일 페이지 방식을 없애고 목록 + 상세 패턴으로 �
 
 ## 5. 월간 CHECK LIST
 
-`monthly.$year.$month.tsx`에 체크리스트 영역을 추가합니다. 항목 추가/삭제/체크 토글이 가능하며, 데이터는 해당 월 페이지의 `textFields.checklist`에 JSON 문자열로 저장됩니다(스키마 변경 없음). 레이아웃은 달력 / 체크리스트 / 필기 NOTE 3분할.
+`monthly.$year.$month.tsx`에 체크리스트 영역을 추가합니다. 항목 추가/삭제/체크 토글이 가능하며, 데이터는 해당 월 페이지의 `textFields.checklist`에 아래 구조를 엄격히 지켜 JSON 문자열로 저장합니다(스키마 변경 없음). 파싱에 실패하거나 배열이 아니면 빈 배열로 fallback 합니다. 레이아웃은 달력 / 체크리스트 / 필기 NOTE 3분할.
+
+```ts
+type ChecklistItem = {
+  id: string;      // 고유 id (타임스탬프 + 랜덤)
+  text: string;
+  checked: boolean;
+};
+// textFields.checklist = JSON.stringify(ChecklistItem[])
+```
 
 ## 6. Family 개인 Office 정보
 

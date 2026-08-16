@@ -58,7 +58,13 @@ export function PageShell({ title, subtitle, actions, children, wide }: Props) {
   );
 }
 
+const ITEM_CLASS =
+  "flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] text-muted-foreground transition-colors hover:text-foreground md:flex-none";
+const ACTIVE_PROPS = { className: "text-primary bg-secondary" };
+
 function QuickNav() {
+  const { year } = useSelectedYear();
+
   return (
     <nav
       aria-label="빠른 이동"
@@ -73,17 +79,25 @@ function QuickNav() {
       >
         LH
       </Link>
-      {NAV.map(({ to, label, icon: Icon }) => (
-        <Link
-          key={to}
-          to={to}
-          activeProps={{ className: "text-primary bg-secondary" }}
-          className="flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] text-muted-foreground transition-colors hover:text-foreground md:flex-none"
-        >
-          <Icon className="size-5" />
-          {label}
-        </Link>
-      ))}
+      {NAV.map(({ to, label, icon: Icon }) =>
+        to === "/calendar" ? (
+          <Link
+            key={to}
+            to="/calendar/$year"
+            params={{ year: String(year) }}
+            activeProps={ACTIVE_PROPS}
+            className={ITEM_CLASS}
+          >
+            <Icon className="size-5" />
+            {label}
+          </Link>
+        ) : (
+          <Link key={to} to={to} activeProps={ACTIVE_PROPS} className={ITEM_CLASS}>
+            <Icon className="size-5" />
+            {label}
+          </Link>
+        ),
+      )}
     </nav>
   );
 }

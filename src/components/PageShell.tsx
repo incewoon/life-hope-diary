@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { type ReactNode } from "react";
 
-import { BackupReminder } from "@/components/BackupReminder";
 import { cn } from "@/lib/utils";
 import { useSelectedYear } from "@/lib/year";
 
@@ -43,7 +42,6 @@ export function PageShell({ title, subtitle, actions, children, wide }: Props) {
     <div className="min-h-screen bg-background pb-24 md:pb-8 md:pl-20">
       <QuickNav />
       <div className={cn("mx-auto px-4 pt-4 md:px-8", wide ? "max-w-[1400px]" : "max-w-5xl")}>
-        <BackupReminder />
         <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>

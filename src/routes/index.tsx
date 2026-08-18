@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { BRAND } from "@/content/lh-content";
+import { useRestoreLastRoute } from "@/lib/last-route";
 import { useSelectedYear, yearOptions } from "@/lib/year";
 
 export const Route = createFileRoute("/")({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/")({
 
 function Cover() {
   const { year, setYear } = useSelectedYear();
+  useRestoreLastRoute();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-primary px-6 py-16 text-primary-foreground">
@@ -59,10 +61,6 @@ function Cover() {
       >
         수첩 열기
       </Link>
-      <p className="mt-6 max-w-sm text-center text-xs leading-relaxed opacity-70">
-        모든 데이터는 이 기기 안에만 저장되는 완전 오프라인 앱입니다. 기기 초기화에 대비해
-        설정에서 주기적으로 백업하세요.
-      </p>
     </main>
   );
 }

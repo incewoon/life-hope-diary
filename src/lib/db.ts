@@ -150,4 +150,7 @@ export async function setMeta(key: string, value: string): Promise<void> {
 export const META_KEYS = {
   selectedYear: "selectedYear",
   lastBackupAt: "lastBackupAt",
+  lastBackupNoticeAt: "lastBackupNoticeAt",
+  onboardingNoticeShown: "onboardingNoticeShown",
+  lastRoute: "lastRoute",
 } as const;

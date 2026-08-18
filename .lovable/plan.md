@@ -32,3 +32,4 @@
 - `src/components/BackupReminder.tsx` 제거하고 `PageShell`에서 사용 제거. 대신 `sonner` 토스트를 띄우는 `useBackupNotice()` 훅을 `__root.tsx`에서 1회 호출. `backupIsStale` 기준은 30일로 조정(백업 기록 없으면 첫 실행 시 1회 안내).
 - `StaticPage.tsx`는 `HandwritingCanvas` 없이 콘텐츠만 렌더하도록 단순화(props 시그니처 유지). `family.tsx`에서 `HandwritingCanvas` 제거.
 - 기존에 저장된 `static-*` 필기 데이터는 삭제하지 않고 그대로 둡니다(표시만 안 함).
+- `META_KEYS`에 `onboardingNoticeShown`도 추가해 최초 1회 안내 여부를 기록합니다.

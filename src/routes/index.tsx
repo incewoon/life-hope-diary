@@ -59,10 +59,6 @@ function Cover() {
       >
         수첩 열기
       </Link>
-      <p className="mt-6 max-w-sm text-center text-xs leading-relaxed opacity-70">
-        모든 데이터는 이 기기 안에만 저장되는 완전 오프라인 앱입니다. 기기 초기화에 대비해
-        설정에서 주기적으로 백업하세요.
-      </p>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { BRAND } from "@/content/lh-content";
+import { useRestoreLastRoute } from "@/lib/last-route";
 import { useSelectedYear, yearOptions } from "@/lib/year";
 
 export const Route = createFileRoute("/")({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/")({
 
 function Cover() {
   const { year, setYear } = useSelectedYear();
+  useRestoreLastRoute();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-primary px-6 py-16 text-primary-foreground">

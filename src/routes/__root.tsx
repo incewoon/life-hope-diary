@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { PenProvider } from "@/lib/pen-context";
+import { useAppNotices } from "@/lib/app-notice";
+import { useTrackLastRoute } from "@/lib/last-route";
 
 function NotFoundComponent() {
   return (
@@ -118,6 +120,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useAppNotices();
+  useTrackLastRoute();
 
   return (
     <QueryClientProvider client={queryClient}>

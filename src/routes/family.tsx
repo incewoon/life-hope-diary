@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { HandwritingCanvas } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
 import { REGIONAL_OFFICES } from "@/content/lh-content";
 import { usePageText } from "@/lib/use-page-text";
@@ -28,7 +27,6 @@ function FamilyPage() {
       subtitle={status === "saving" ? "저장 중…" : status === "saved" ? "저장됨" : undefined}
       wide
     >
-      {/* 고정 콘텐츠 + 전면 필기 오버레이 */}
       <div className="relative">
         <div className="pb-16">
           <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -40,7 +38,6 @@ function FamilyPage() {
             ))}
           </ul>
         </div>
-        <HandwritingCanvas pageId="static-family" pageType="static" overlay label="필기" />
       </div>
 
       {/* 입력 영역은 필기 레이어 바깥에 배치해 겹침을 방지합니다 */}

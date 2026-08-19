@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { PageShell } from "@/components/PageShell";
-import { pad2, useSelectedYear, yearOptions } from "@/lib/year";
+import { pad2, useSelectedYear } from "@/lib/year";
 
 export const Route = createFileRoute("/contents")({
   head: () => ({
@@ -53,28 +53,11 @@ const TOOL_ITEMS: Item[] = [
 ];
 
 function Contents() {
-  const { year, setYear } = useSelectedYear();
+  const { year } = useSelectedYear();
   const today = new Date();
 
   return (
     <PageShell title="목차" subtitle={`${year}년 업무수첩`}>
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">연도</span>
-        {yearOptions().map((y) => (
-          <button
-            key={y}
-            type="button"
-            onClick={() => setYear(y)}
-            className={
-              y === year
-                ? "rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground"
-                : "rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground"
-            }
-          >
-            {y}
-          </button>
-        ))}
-      </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <Link

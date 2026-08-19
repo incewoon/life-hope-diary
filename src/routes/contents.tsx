@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { PageShell } from "@/components/PageShell";
-import { pad2, useSelectedYear, yearOptions } from "@/lib/year";
+import { pad2, useSelectedYear } from "@/lib/year";
 
 export const Route = createFileRoute("/contents")({
   head: () => ({
@@ -53,7 +53,7 @@ const TOOL_ITEMS: Item[] = [
 ];
 
 function Contents() {
-  const { year, setYear } = useSelectedYear();
+  const { year } = useSelectedYear();
   const today = new Date();
 
   return (

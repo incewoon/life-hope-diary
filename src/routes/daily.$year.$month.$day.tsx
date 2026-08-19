@@ -3,6 +3,7 @@ import { addDays, format, subDays } from "date-fns";
 import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { DaySchedule } from "@/components/DaySchedule";
 import { HandwritingCanvas } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
 import { usePageText } from "@/lib/use-page-text";
@@ -65,21 +66,13 @@ function DailyPage() {
         </Link>
       </div>
 
-
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        {(["오늘의 목표", "핵심 일정", "체크 사항"] as const).map((k) => (
-          <label key={k} className="block">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">{k}</span>
-            <textarea
-              value={fields[k] ?? ""}
-              onChange={(e) => setField(k, e.target.value)}
-              rows={3}
-              className="w-full resize-none rounded-xl border border-border bg-card p-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-          </label>
-        ))}
-      </div>
+      <DaySchedule
+        baseDate={current}
+        value={fields["schedule"]}
+        onChange={(v) => setField("schedule", v)}
+      />
       <HandwritingCanvas pageId={id} pageType="daily" grid minHeight={560} label="자유 필기" />
+
     </PageShell>
   );
 }

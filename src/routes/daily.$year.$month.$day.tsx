@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { addDays, format, subDays } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -29,17 +30,50 @@ function dayParams(date: Date) {
   };
 }
 
+function parsePair(raw: string | undefined, fallback: [number, number]): [number, number] {
+  const [a, b] = (raw ?? "").split(",").map(Number);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || (a as number) <= 0 || (b as number) <= 0) {
+    return fallback;
+  }
+  return [a as number, b as number];
+}
+
+/** 가로모드 기준 필기판 기본 크기 (화면을 한 번만 읽어 산출) */
+function computeBase(): [number, number] {
+  if (typeof window === "undefined") return [960, 560];
+  const long = Math.max(window.innerWidth, window.innerHeight);
+  const short = Math.min(window.innerWidth, window.innerHeight);
+  const w = Math.max(640, Math.round(long - 80 - 48));
+  const h = Math.max(320, Math.round(short - 260));
+  return [w, h];
+}
+
 function DailyPage() {
   const { year, month, day } = Route.useParams();
   const y = Number(year);
   const m = Number(month);
   const d = Number(day);
   const id = dailyId(y, m, d);
-  const { fields, setField, status } = usePageText(id, "daily");
+  const { fields, setField, status, loaded } = usePageText(id, "daily");
 
   const current = new Date(y, m - 1, d);
   const prev = subDays(current, 1);
   const next = addDays(current, 1);
+
+  const [fallbackBase, setFallbackBase] = useState<[number, number]>([960, 560]);
+  useEffect(() => setFallbackBase(computeBase()), []);
+
+  const [baseWidth, baseHeight] = parsePair(fields["canvasBase"], fallbackBase);
+  const [cols, rows] = parsePair(fields["canvasGrid"], [1, 1]);
+
+  // 최초 1회 기준 크기 저장
+  useEffect(() => {
+    if (!loaded) return;
+    if (fields["canvasBase"]) return;
+    const [w, h] = computeBase();
+    setField("canvasBase", `${w},${h}`);
+  }, [loaded, fields, setField]);
+
 
   return (
     <PageShell
@@ -71,7 +105,19 @@ function DailyPage() {
         value={fields["schedule"]}
         onChange={(v) => setField("schedule", v)}
       />
-      <HandwritingCanvas pageId={id} pageType="daily" grid minHeight={560} label="자유 필기" />
+      <HandwritingCanvas
+        pageId={id}
+        pageType="daily"
+        grid
+        label="자유 필기"
+        fixed={{
+          baseWidth,
+          baseHeight,
+          cols,
+          rows,
+          onChange: (c, r) => setField("canvasGrid", `${c},${r}`),
+        }}
+      />
 
     </PageShell>
   );

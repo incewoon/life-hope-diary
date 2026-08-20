@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import getStroke from "perfect-freehand";
-import { Eraser, Pen, Redo2, RotateCcw, Undo2, Check, Loader2 } from "lucide-react";
+import {
+  Eraser,
+  Pen,
+  Redo2,
+  RotateCcw,
+  Undo2,
+  Check,
+  Loader2,
+  ChevronsDown,
+  ChevronsUp,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { PEN_COLORS, PEN_WIDTHS, usePen } from "@/lib/pen-context";
@@ -13,6 +25,17 @@ import {
   type StrokePoint,
 } from "@/lib/db";
 
+/** 가로모드 기준 고정 필기판 설정 */
+export interface FixedBoard {
+  baseWidth: number;
+  baseHeight: number;
+  cols: number;
+  rows: number;
+  onChange: (cols: number, rows: number) => void;
+}
+
+export const MAX_BOARD_UNITS = 5;
+
 interface Props {
   pageId: string;
   pageType: PageType;
@@ -23,7 +46,10 @@ interface Props {
   label?: string | undefined;
   /** 콘텐츠 위에 겹치는 전면 필기 레이어 (입력 필드가 없는 페이지 전용) */
   overlay?: boolean;
+  /** 고정 크기 + 스크롤 + 늘리기 모드 */
+  fixed?: FixedBoard | undefined;
 }
+
 
 const MAX_HISTORY = 20;
 
@@ -59,6 +85,7 @@ export function HandwritingCanvas({
   minHeight = 320,
   label,
   overlay = false,
+  fixed,
 }: Props) {
   const { tool, color, width } = usePen();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -69,9 +96,14 @@ export function HandwritingCanvas({
   const pendingRef = useRef<Stroke[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sizeRef = useRef({ w: 0, h: 0 });
+  /** 좌표 정규화 기준 (고정 모드에서는 baseWidth 고정) */
+  const scaleRef = useRef(1);
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
+
+  const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
+  const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -84,7 +116,7 @@ export function HandwritingCanvas({
       ? [...strokesRef.current, { points: drawingRef.current, color, width }]
       : strokesRef.current;
     for (const s of all) {
-      const path = new Path2D(strokePath(s, w));
+      const path = new Path2D(strokePath(s, scaleRef.current));
       ctx.fillStyle = s.color;
       ctx.fill(path);
     }
@@ -95,16 +127,20 @@ export function HandwritingCanvas({
     const container = containerRef.current;
     if (!canvas || !container) return;
     const rect = container.getBoundingClientRect();
+    const w = boardWidth ?? rect.width;
+    const h = boardHeight ?? rect.height;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    sizeRef.current = { w: rect.width, h: rect.height };
-    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    sizeRef.current = { w, h };
+    scaleRef.current = fixed ? fixed.baseWidth : w || 1;
+    canvas.width = Math.max(1, Math.floor(w * dpr));
+    canvas.height = Math.max(1, Math.floor(h * dpr));
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
     const ctx = canvas.getContext("2d");
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     redraw();
-  }, [redraw]);
+  }, [redraw, boardWidth, boardHeight, fixed]);
+
 
   // 현재 페이지의 stroke만 로드 (페이지 이동 시 언마운트되며 해제)
   useEffect(() => {
@@ -168,7 +204,7 @@ export function HandwritingCanvas({
 
   const toPoint = (e: React.PointerEvent): StrokePoint => {
     const rect = canvasRef.current!.getBoundingClientRect();
-    const w = rect.width || 1;
+    const w = scaleRef.current || rect.width || 1;
     return {
       x: (e.clientX - rect.left) / w,
       y: (e.clientY - rect.top) / w,
@@ -176,6 +212,7 @@ export function HandwritingCanvas({
       pressure: e.pressure && e.pressure > 0 ? e.pressure : 0.5,
     };
   };
+
 
   const eraseAt = (pt: StrokePoint) => {
     const threshold = 0.02;
@@ -282,6 +319,72 @@ export function HandwritingCanvas({
     );
   }
 
+  if (fixed) {
+    const clampCols = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
+    const clampRows = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
+    return (
+      <section className={cn("flex flex-col gap-2", className)}>
+        <CanvasToolbar
+          label={label}
+          status={status}
+          onUndo={undo}
+          onRedo={redo}
+          onClear={clearAll}
+        />
+        <div
+          className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
+          style={{ maxHeight: "80vh" }}
+        >
+          <div
+            ref={containerRef}
+            className={cn("relative", grid && "bg-grid")}
+            style={{ width: boardWidth, height: boardHeight }}
+          >
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 touch-none"
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              onPointerLeave={onPointerUp}
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <BoardButton
+            icon={ChevronsDown}
+            label="아래로 늘리기"
+            disabled={fixed.rows >= MAX_BOARD_UNITS}
+            onClick={() => fixed.onChange(fixed.cols, clampRows(fixed.rows + 1))}
+          />
+          <BoardButton
+            icon={ChevronsUp}
+            label="세로 줄이기"
+            disabled={fixed.rows <= 1}
+            onClick={() => fixed.onChange(fixed.cols, clampRows(fixed.rows - 1))}
+          />
+          <span className="mx-1 h-4 w-px bg-border" />
+          <BoardButton
+            icon={ChevronsRight}
+            label="오른쪽으로 늘리기"
+            disabled={fixed.cols >= MAX_BOARD_UNITS}
+            onClick={() => fixed.onChange(clampCols(fixed.cols + 1), fixed.rows)}
+          />
+          <BoardButton
+            icon={ChevronsLeft}
+            label="가로 줄이기"
+            disabled={fixed.cols <= 1}
+            onClick={() => fixed.onChange(clampCols(fixed.cols - 1), fixed.rows)}
+          />
+          <span className="ml-auto">
+            가로 {fixed.cols} × 세로 {fixed.rows}
+          </span>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className={cn("flex flex-col gap-2", className)}>
       <CanvasToolbar
@@ -312,6 +415,34 @@ export function HandwritingCanvas({
     </section>
   );
 }
+
+function BoardButton({
+  icon: Icon,
+  label,
+  disabled,
+  onClick,
+}: {
+  icon: typeof ChevronsDown;
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-secondary",
+        disabled && "opacity-40",
+      )}
+    >
+      <Icon className="size-4" />
+      {label}
+    </button>
+  );
+}
+
 
 
 function CanvasToolbar({

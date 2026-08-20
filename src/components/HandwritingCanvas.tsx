@@ -85,6 +85,7 @@ export function HandwritingCanvas({
   minHeight = 320,
   label,
   overlay = false,
+  fixed,
 }: Props) {
   const { tool, color, width } = usePen();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -95,9 +96,14 @@ export function HandwritingCanvas({
   const pendingRef = useRef<Stroke[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sizeRef = useRef({ w: 0, h: 0 });
+  /** 좌표 정규화 기준 (고정 모드에서는 baseWidth 고정) */
+  const scaleRef = useRef(1);
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
+
+  const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
+  const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
 
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -110,7 +116,7 @@ export function HandwritingCanvas({
       ? [...strokesRef.current, { points: drawingRef.current, color, width }]
       : strokesRef.current;
     for (const s of all) {
-      const path = new Path2D(strokePath(s, w));
+      const path = new Path2D(strokePath(s, scaleRef.current));
       ctx.fillStyle = s.color;
       ctx.fill(path);
     }
@@ -121,16 +127,20 @@ export function HandwritingCanvas({
     const container = containerRef.current;
     if (!canvas || !container) return;
     const rect = container.getBoundingClientRect();
+    const w = boardWidth ?? rect.width;
+    const h = boardHeight ?? rect.height;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    sizeRef.current = { w: rect.width, h: rect.height };
-    canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-    canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-    canvas.style.width = `${rect.width}px`;
-    canvas.style.height = `${rect.height}px`;
+    sizeRef.current = { w, h };
+    scaleRef.current = fixed ? fixed.baseWidth : w || 1;
+    canvas.width = Math.max(1, Math.floor(w * dpr));
+    canvas.height = Math.max(1, Math.floor(h * dpr));
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
     const ctx = canvas.getContext("2d");
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     redraw();
-  }, [redraw]);
+  }, [redraw, boardWidth, boardHeight, fixed]);
+
 
   // 현재 페이지의 stroke만 로드 (페이지 이동 시 언마운트되며 해제)
   useEffect(() => {

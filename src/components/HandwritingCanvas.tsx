@@ -204,7 +204,7 @@ export function HandwritingCanvas({
 
   const toPoint = (e: React.PointerEvent): StrokePoint => {
     const rect = canvasRef.current!.getBoundingClientRect();
-    const w = rect.width || 1;
+    const w = scaleRef.current || rect.width || 1;
     return {
       x: (e.clientX - rect.left) / w,
       y: (e.clientY - rect.top) / w,
@@ -212,6 +212,7 @@ export function HandwritingCanvas({
       pressure: e.pressure && e.pressure > 0 ? e.pressure : 0.5,
     };
   };
+
 
   const eraseAt = (pt: StrokePoint) => {
     const threshold = 0.02;

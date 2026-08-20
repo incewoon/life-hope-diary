@@ -93,11 +93,15 @@ export function HandwritingCanvas({
   const strokesRef = useRef<Stroke[]>([]);
   const redoRef = useRef<Stroke[]>([]);
   const drawingRef = useRef<StrokePoint[] | null>(null);
+  const activePointerRef = useRef<number | null>(null);
   const pendingRef = useRef<Stroke[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sizeRef = useRef({ w: 0, h: 0 });
+  const sizeRef = useRef({ w: 0, h: 0, dpr: 0 });
   /** 좌표 정규화 기준 (고정 모드에서는 baseWidth 고정) */
   const scaleRef = useRef(1);
+  /** 저장된 stroke 캐시 (진행 중인 획만 매 프레임 그리기) */
+  const cacheRef = useRef<HTMLCanvasElement | null>(null);
+  const cacheDirtyRef = useRef(true);
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
@@ -105,19 +109,56 @@ export function HandwritingCanvas({
   const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
 
+  const invalidateCache = useCallback(() => {
+    cacheDirtyRef.current = true;
+  }, []);
+
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const { w, h } = sizeRef.current;
-    ctx.clearRect(0, 0, w, h);
-    const all = drawingRef.current
-      ? [...strokesRef.current, { points: drawingRef.current, color, width }]
-      : strokesRef.current;
-    for (const s of all) {
-      const path = new Path2D(strokePath(s, scaleRef.current));
-      ctx.fillStyle = s.color;
+    const { w, h, dpr } = sizeRef.current;
+    if (w <= 0 || h <= 0) return;
+
+    // 저장된 stroke는 오프스크린 캔버스에 캐시
+    let cache = cacheRef.current;
+    const cw = Math.max(1, Math.floor(w * dpr));
+    const ch = Math.max(1, Math.floor(h * dpr));
+    if (!cache) {
+      cache = document.createElement("canvas");
+      cacheRef.current = cache;
+      cacheDirtyRef.current = true;
+    }
+    if (cache.width !== cw || cache.height !== ch) {
+      cache.width = cw;
+      cache.height = ch;
+      cacheDirtyRef.current = true;
+    }
+    if (cacheDirtyRef.current) {
+      const cctx = cache.getContext("2d");
+      if (cctx) {
+        cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cctx.clearRect(0, 0, w, h);
+        for (const s of strokesRef.current) {
+          const path = new Path2D(strokePath(s, scaleRef.current));
+          cctx.fillStyle = s.color;
+          cctx.fill(path);
+        }
+      }
+      cacheDirtyRef.current = false;
+    }
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cache, 0, 0);
+    ctx.restore();
+
+    const live = drawingRef.current;
+    if (live && live.length > 0) {
+      const path = new Path2D(strokePath({ points: live, color, width }, scaleRef.current));
+      ctx.fillStyle = color;
       ctx.fill(path);
     }
   }, [color, width]);
@@ -130,7 +171,14 @@ export function HandwritingCanvas({
     const w = boardWidth ?? rect.width;
     const h = boardHeight ?? rect.height;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    sizeRef.current = { w, h };
+    const prev = sizeRef.current;
+    if (prev.w === w && prev.h === h && prev.dpr === dpr) {
+      redraw();
+      return;
+    }
+    // 그리는 도중에는 캔버스를 재설정하지 않음 (진행 중인 획 보호)
+    if (drawingRef.current) return;
+    sizeRef.current = { w, h, dpr };
     scaleRef.current = fixed ? fixed.baseWidth : w || 1;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.max(1, Math.floor(h * dpr));
@@ -138,8 +186,10 @@ export function HandwritingCanvas({
     canvas.style.height = `${h}px`;
     const ctx = canvas.getContext("2d");
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    invalidateCache();
     redraw();
-  }, [redraw, boardWidth, boardHeight, fixed]);
+  }, [redraw, boardWidth, boardHeight, fixed, invalidateCache]);
+
 
 
   // 현재 페이지의 stroke만 로드 (페이지 이동 시 언마운트되며 해제)

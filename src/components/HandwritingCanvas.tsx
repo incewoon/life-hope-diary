@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import getStroke from "perfect-freehand";
-import { Eraser, Pen, Redo2, RotateCcw, Undo2, Check, Loader2 } from "lucide-react";
+import {
+  Eraser,
+  Pen,
+  Redo2,
+  RotateCcw,
+  Undo2,
+  Check,
+  Loader2,
+  ChevronsDown,
+  ChevronsUp,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { PEN_COLORS, PEN_WIDTHS, usePen } from "@/lib/pen-context";
@@ -13,6 +25,17 @@ import {
   type StrokePoint,
 } from "@/lib/db";
 
+/** 가로모드 기준 고정 필기판 설정 */
+export interface FixedBoard {
+  baseWidth: number;
+  baseHeight: number;
+  cols: number;
+  rows: number;
+  onChange: (cols: number, rows: number) => void;
+}
+
+export const MAX_BOARD_UNITS = 5;
+
 interface Props {
   pageId: string;
   pageType: PageType;
@@ -23,7 +46,10 @@ interface Props {
   label?: string | undefined;
   /** 콘텐츠 위에 겹치는 전면 필기 레이어 (입력 필드가 없는 페이지 전용) */
   overlay?: boolean;
+  /** 고정 크기 + 스크롤 + 늘리기 모드 */
+  fixed?: FixedBoard | undefined;
 }
+
 
 const MAX_HISTORY = 20;
 

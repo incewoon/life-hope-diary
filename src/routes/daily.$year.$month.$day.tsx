@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { addDays, format, subDays } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -104,7 +105,19 @@ function DailyPage() {
         value={fields["schedule"]}
         onChange={(v) => setField("schedule", v)}
       />
-      <HandwritingCanvas pageId={id} pageType="daily" grid minHeight={560} label="자유 필기" />
+      <HandwritingCanvas
+        pageId={id}
+        pageType="daily"
+        grid
+        label="자유 필기"
+        fixed={{
+          baseWidth,
+          baseHeight,
+          cols,
+          rows,
+          onChange: (c, r) => setField("canvasGrid", `${c},${r}`),
+        }}
+      />
 
     </PageShell>
   );

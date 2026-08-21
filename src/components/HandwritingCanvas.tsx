@@ -9,8 +9,6 @@ import {
   Check,
   Loader2,
   ChevronsDown,
-  ChevronsUp,
-  ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
 
@@ -197,11 +195,15 @@ export function HandwritingCanvas({
     let alive = true;
     strokesRef.current = [];
     redoRef.current = [];
+    drawingRef.current = null;
+    activePointerRef.current = null;
+    invalidateCache();
     setReady(false);
     getPage(pageId)
       .then((page) => {
         if (!alive) return;
         strokesRef.current = page?.strokes ?? [];
+        invalidateCache();
         setReady(true);
         redraw();
       })
@@ -213,7 +215,8 @@ export function HandwritingCanvas({
       strokesRef.current = [];
       redoRef.current = [];
     };
-  }, [pageId, redraw]);
+  }, [pageId, redraw, invalidateCache]);
+
 
   useEffect(() => {
     resize();
@@ -274,13 +277,20 @@ export function HandwritingCanvas({
         ),
     );
     if (strokesRef.current.length !== before) {
+      invalidateCache();
       redraw();
       flushReplace();
     }
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (activePointerRef.current !== null) return;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* 캡처 실패해도 그리기는 계속 */
+    }
+    activePointerRef.current = e.pointerId;
     const pt = toPoint(e);
     if (tool === "eraser") {
       eraseAt(pt);
@@ -291,7 +301,7 @@ export function HandwritingCanvas({
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (e.buttons === 0) return;
+    if (activePointerRef.current !== e.pointerId) return;
     const pt = toPoint(e);
     if (tool === "eraser") {
       eraseAt(pt);
@@ -302,16 +312,30 @@ export function HandwritingCanvas({
     redraw();
   };
 
-  const onPointerUp = () => {
+  const endPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointerRef.current !== e.pointerId) return;
+    activePointerRef.current = null;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      /* noop */
+    }
     const points = drawingRef.current;
     drawingRef.current = null;
-    if (!points || points.length === 0) return;
+    if (!points || points.length === 0) {
+      redraw();
+      return;
+    }
     const stroke: Stroke = { points, color, width };
     strokesRef.current = [...strokesRef.current, stroke];
     redoRef.current = [];
     pendingRef.current.push(stroke);
+    invalidateCache();
     redraw();
     flushAppend();
+    resize();
   };
 
   const undo = () => {
@@ -320,6 +344,7 @@ export function HandwritingCanvas({
     strokesRef.current = strokesRef.current.slice(0, -1);
     redoRef.current = [...redoRef.current, last].slice(-MAX_HISTORY);
     pendingRef.current = [];
+    invalidateCache();
     redraw();
     flushReplace();
   };
@@ -329,6 +354,7 @@ export function HandwritingCanvas({
     if (!last) return;
     redoRef.current = redoRef.current.slice(0, -1);
     strokesRef.current = [...strokesRef.current, last];
+    invalidateCache();
     redraw();
     flushReplace();
   };
@@ -338,9 +364,11 @@ export function HandwritingCanvas({
     strokesRef.current = [];
     redoRef.current = [];
     pendingRef.current = [];
+    invalidateCache();
     redraw();
     flushReplace();
   };
+
 
   if (overlay) {
     return (
@@ -360,9 +388,8 @@ export function HandwritingCanvas({
             className="pointer-events-auto absolute inset-0 touch-none"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onPointerLeave={onPointerUp}
+            onPointerUp={endPointer}
+            onPointerCancel={endPointer}
           />
         </div>
       </div>
@@ -370,8 +397,7 @@ export function HandwritingCanvas({
   }
 
   if (fixed) {
-    const clampCols = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
-    const clampRows = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
+    const clamp = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
     return (
       <section className={cn("flex flex-col gap-2", className)}>
         <CanvasToolbar
@@ -381,58 +407,46 @@ export function HandwritingCanvas({
           onRedo={redo}
           onClear={clearAll}
         />
-        <div
-          className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
-          style={{ maxHeight: "80vh" }}
-        >
+        <div className="relative">
           <div
-            ref={containerRef}
-            className={cn("relative", grid && "bg-grid")}
-            style={{ width: boardWidth, height: boardHeight }}
+            className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
+            style={{ maxHeight: "80vh" }}
           >
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 touch-none"
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerUp}
-              onPointerLeave={onPointerUp}
-            />
+            <div
+              ref={containerRef}
+              className={cn("relative", grid && "bg-grid")}
+              style={{ width: boardWidth, height: boardHeight }}
+            >
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 touch-none"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endPointer}
+                onPointerCancel={endPointer}
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <BoardButton
-            icon={ChevronsDown}
-            label="아래로 늘리기"
-            disabled={fixed.rows >= MAX_BOARD_UNITS}
-            onClick={() => fixed.onChange(fixed.cols, clampRows(fixed.rows + 1))}
-          />
-          <BoardButton
-            icon={ChevronsUp}
-            label="세로 줄이기"
-            disabled={fixed.rows <= 1}
-            onClick={() => fixed.onChange(fixed.cols, clampRows(fixed.rows - 1))}
-          />
-          <span className="mx-1 h-4 w-px bg-border" />
-          <BoardButton
-            icon={ChevronsRight}
-            label="오른쪽으로 늘리기"
-            disabled={fixed.cols >= MAX_BOARD_UNITS}
-            onClick={() => fixed.onChange(clampCols(fixed.cols + 1), fixed.rows)}
-          />
-          <BoardButton
-            icon={ChevronsLeft}
-            label="가로 줄이기"
-            disabled={fixed.cols <= 1}
-            onClick={() => fixed.onChange(clampCols(fixed.cols - 1), fixed.rows)}
-          />
-          <span className="ml-auto">
-            가로 {fixed.cols} × 세로 {fixed.rows}
-          </span>
+          {fixed.rows < MAX_BOARD_UNITS ? (
+            <EdgeButton
+              icon={ChevronsDown}
+              label="아래로 늘리기"
+              className="bottom-2 left-1/2 -translate-x-1/2"
+              onClick={() => fixed.onChange(fixed.cols, clamp(fixed.rows + 1))}
+            />
+          ) : null}
+          {fixed.cols < MAX_BOARD_UNITS ? (
+            <EdgeButton
+              icon={ChevronsRight}
+              label="오른쪽으로 늘리기"
+              className="right-2 top-1/2 -translate-y-1/2"
+              onClick={() => fixed.onChange(clamp(fixed.cols + 1), fixed.rows)}
+            />
+          ) : null}
         </div>
       </section>
     );
+
   }
 
   return (
@@ -457,41 +471,41 @@ export function HandwritingCanvas({
           className="absolute inset-0 touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          onPointerLeave={onPointerUp}
+          onPointerUp={endPointer}
+          onPointerCancel={endPointer}
         />
       </div>
     </section>
   );
 }
 
-function BoardButton({
+function EdgeButton({
   icon: Icon,
   label,
-  disabled,
+  className,
   onClick,
 }: {
   icon: typeof ChevronsDown;
   label: string;
-  disabled: boolean;
+  className: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      aria-label={label}
+      title={label}
       onClick={onClick}
-      disabled={disabled}
       className={cn(
-        "flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-secondary",
-        disabled && "opacity-40",
+        "absolute z-10 flex size-9 items-center justify-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-secondary hover:text-foreground",
+        className,
       )}
     >
-      <Icon className="size-4" />
-      {label}
+      <Icon className="size-5" />
     </button>
   );
 }
+
 
 
 

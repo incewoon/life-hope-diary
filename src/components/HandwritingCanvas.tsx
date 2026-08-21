@@ -100,6 +100,12 @@ export function HandwritingCanvas({
   /** 저장된 stroke 캐시 (진행 중인 획만 매 프레임 그리기) */
   const cacheRef = useRef<HTMLCanvasElement | null>(null);
   const cacheDirtyRef = useRef(true);
+  /** 스크롤 컨테이너 (고정 모드) */
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  /** 화면상의 활성 포인터들 (두 손가락 이동 판정용) */
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);

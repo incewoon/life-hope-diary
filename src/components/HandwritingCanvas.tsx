@@ -473,41 +473,41 @@ export function HandwritingCanvas({
           className="absolute inset-0 touch-none"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          onPointerLeave={onPointerUp}
+          onPointerUp={endPointer}
+          onPointerCancel={endPointer}
         />
       </div>
     </section>
   );
 }
 
-function BoardButton({
+function EdgeButton({
   icon: Icon,
   label,
-  disabled,
+  className,
   onClick,
 }: {
   icon: typeof ChevronsDown;
   label: string;
-  disabled: boolean;
+  className: string;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
+      aria-label={label}
+      title={label}
       onClick={onClick}
-      disabled={disabled}
       className={cn(
-        "flex items-center gap-1 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-foreground transition-colors hover:bg-secondary",
-        disabled && "opacity-40",
+        "absolute z-10 flex size-9 items-center justify-center rounded-full border border-border bg-card/90 text-muted-foreground shadow-sm backdrop-blur transition-colors hover:bg-secondary hover:text-foreground",
+        className,
       )}
     >
-      <Icon className="size-4" />
-      {label}
+      <Icon className="size-5" />
     </button>
   );
 }
+
 
 
 

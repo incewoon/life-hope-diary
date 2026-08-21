@@ -9,8 +9,6 @@ import {
   Check,
   Loader2,
   ChevronsDown,
-  ChevronsUp,
-  ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
 

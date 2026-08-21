@@ -284,6 +284,8 @@ export function HandwritingCanvas({
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    // 고정(스크롤) 모드에서는 손가락 터치를 스크롤 제스처로 넘김 (펜/마우스만 필기)
+    if (fixed && e.pointerType === "touch") return;
     if (activePointerRef.current !== null) return;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -419,7 +421,8 @@ export function HandwritingCanvas({
             >
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 touch-none"
+                className="absolute inset-0"
+                style={{ touchAction: "pan-x pan-y" }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endPointer}

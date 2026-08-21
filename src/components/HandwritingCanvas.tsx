@@ -279,13 +279,20 @@ export function HandwritingCanvas({
         ),
     );
     if (strokesRef.current.length !== before) {
+      invalidateCache();
       redraw();
       flushReplace();
     }
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+    if (activePointerRef.current !== null) return;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* 캡처 실패해도 그리기는 계속 */
+    }
+    activePointerRef.current = e.pointerId;
     const pt = toPoint(e);
     if (tool === "eraser") {
       eraseAt(pt);
@@ -296,7 +303,7 @@ export function HandwritingCanvas({
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (e.buttons === 0) return;
+    if (activePointerRef.current !== e.pointerId) return;
     const pt = toPoint(e);
     if (tool === "eraser") {
       eraseAt(pt);
@@ -307,16 +314,30 @@ export function HandwritingCanvas({
     redraw();
   };
 
-  const onPointerUp = () => {
+  const endPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointerRef.current !== e.pointerId) return;
+    activePointerRef.current = null;
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      /* noop */
+    }
     const points = drawingRef.current;
     drawingRef.current = null;
-    if (!points || points.length === 0) return;
+    if (!points || points.length === 0) {
+      redraw();
+      return;
+    }
     const stroke: Stroke = { points, color, width };
     strokesRef.current = [...strokesRef.current, stroke];
     redoRef.current = [];
     pendingRef.current.push(stroke);
+    invalidateCache();
     redraw();
     flushAppend();
+    resize();
   };
 
   const undo = () => {
@@ -325,6 +346,7 @@ export function HandwritingCanvas({
     strokesRef.current = strokesRef.current.slice(0, -1);
     redoRef.current = [...redoRef.current, last].slice(-MAX_HISTORY);
     pendingRef.current = [];
+    invalidateCache();
     redraw();
     flushReplace();
   };
@@ -334,6 +356,7 @@ export function HandwritingCanvas({
     if (!last) return;
     redoRef.current = redoRef.current.slice(0, -1);
     strokesRef.current = [...strokesRef.current, last];
+    invalidateCache();
     redraw();
     flushReplace();
   };
@@ -343,9 +366,11 @@ export function HandwritingCanvas({
     strokesRef.current = [];
     redoRef.current = [];
     pendingRef.current = [];
+    invalidateCache();
     redraw();
     flushReplace();
   };
+
 
   if (overlay) {
     return (

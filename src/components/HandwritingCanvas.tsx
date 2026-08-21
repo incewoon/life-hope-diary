@@ -197,11 +197,15 @@ export function HandwritingCanvas({
     let alive = true;
     strokesRef.current = [];
     redoRef.current = [];
+    drawingRef.current = null;
+    activePointerRef.current = null;
+    invalidateCache();
     setReady(false);
     getPage(pageId)
       .then((page) => {
         if (!alive) return;
         strokesRef.current = page?.strokes ?? [];
+        invalidateCache();
         setReady(true);
         redraw();
       })
@@ -213,7 +217,8 @@ export function HandwritingCanvas({
       strokesRef.current = [];
       redoRef.current = [];
     };
-  }, [pageId, redraw]);
+  }, [pageId, redraw, invalidateCache]);
+
 
   useEffect(() => {
     resize();

@@ -390,9 +390,8 @@ export function HandwritingCanvas({
             className="pointer-events-auto absolute inset-0 touch-none"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            onPointerLeave={onPointerUp}
+            onPointerUp={endPointer}
+            onPointerCancel={endPointer}
           />
         </div>
       </div>
@@ -400,8 +399,7 @@ export function HandwritingCanvas({
   }
 
   if (fixed) {
-    const clampCols = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
-    const clampRows = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
+    const clamp = (n: number) => Math.min(MAX_BOARD_UNITS, Math.max(1, n));
     return (
       <section className={cn("flex flex-col gap-2", className)}>
         <CanvasToolbar
@@ -411,58 +409,46 @@ export function HandwritingCanvas({
           onRedo={redo}
           onClear={clearAll}
         />
-        <div
-          className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
-          style={{ maxHeight: "80vh" }}
-        >
+        <div className="relative">
           <div
-            ref={containerRef}
-            className={cn("relative", grid && "bg-grid")}
-            style={{ width: boardWidth, height: boardHeight }}
+            className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
+            style={{ maxHeight: "80vh" }}
           >
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 touch-none"
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerUp}
-              onPointerLeave={onPointerUp}
-            />
+            <div
+              ref={containerRef}
+              className={cn("relative", grid && "bg-grid")}
+              style={{ width: boardWidth, height: boardHeight }}
+            >
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 touch-none"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={endPointer}
+                onPointerCancel={endPointer}
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <BoardButton
-            icon={ChevronsDown}
-            label="아래로 늘리기"
-            disabled={fixed.rows >= MAX_BOARD_UNITS}
-            onClick={() => fixed.onChange(fixed.cols, clampRows(fixed.rows + 1))}
-          />
-          <BoardButton
-            icon={ChevronsUp}
-            label="세로 줄이기"
-            disabled={fixed.rows <= 1}
-            onClick={() => fixed.onChange(fixed.cols, clampRows(fixed.rows - 1))}
-          />
-          <span className="mx-1 h-4 w-px bg-border" />
-          <BoardButton
-            icon={ChevronsRight}
-            label="오른쪽으로 늘리기"
-            disabled={fixed.cols >= MAX_BOARD_UNITS}
-            onClick={() => fixed.onChange(clampCols(fixed.cols + 1), fixed.rows)}
-          />
-          <BoardButton
-            icon={ChevronsLeft}
-            label="가로 줄이기"
-            disabled={fixed.cols <= 1}
-            onClick={() => fixed.onChange(clampCols(fixed.cols - 1), fixed.rows)}
-          />
-          <span className="ml-auto">
-            가로 {fixed.cols} × 세로 {fixed.rows}
-          </span>
+          {fixed.rows < MAX_BOARD_UNITS ? (
+            <EdgeButton
+              icon={ChevronsDown}
+              label="아래로 늘리기"
+              className="bottom-2 left-1/2 -translate-x-1/2"
+              onClick={() => fixed.onChange(fixed.cols, clamp(fixed.rows + 1))}
+            />
+          ) : null}
+          {fixed.cols < MAX_BOARD_UNITS ? (
+            <EdgeButton
+              icon={ChevronsRight}
+              label="오른쪽으로 늘리기"
+              className="right-2 top-1/2 -translate-y-1/2"
+              onClick={() => fixed.onChange(clamp(fixed.cols + 1), fixed.rows)}
+            />
+          ) : null}
         </div>
       </section>
     );
+
   }
 
   return (

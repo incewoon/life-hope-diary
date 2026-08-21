@@ -421,7 +421,8 @@ export function HandwritingCanvas({
             >
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 touch-none"
+                className="absolute inset-0"
+                style={{ touchAction: "pan-x pan-y" }}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endPointer}

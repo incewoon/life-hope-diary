@@ -34,6 +34,22 @@ export interface FixedBoard {
 
 export const MAX_BOARD_UNITS = 5;
 
+export type BoardBg = "none" | "grid" | "dot" | "line";
+
+export const BOARD_BGS: { key: BoardBg; label: string }[] = [
+  { key: "none", label: "없음" },
+  { key: "grid", label: "격자" },
+  { key: "dot", label: "도트" },
+  { key: "line", label: "가로줄" },
+];
+
+function bgClass(bg: BoardBg): string | undefined {
+  if (bg === "grid") return "bg-grid";
+  if (bg === "dot") return "bg-dot";
+  if (bg === "line") return "bg-line";
+  return undefined;
+}
+
 interface Props {
   pageId: string;
   pageType: PageType;
@@ -46,7 +62,14 @@ interface Props {
   overlay?: boolean;
   /** 고정 크기 + 스크롤 + 늘리기 모드 */
   fixed?: FixedBoard | undefined;
+  /** 배경 선택 (fixed 모드) */
+  background?: BoardBg | undefined;
+  onBackgroundChange?: ((bg: BoardBg) => void) | undefined;
+  /** 텍스트 상자 JSON (fixed 모드) */
+  textsValue?: string | undefined;
+  onTextsChange?: ((json: string) => void) | undefined;
 }
+
 
 
 const MAX_HISTORY = 20;

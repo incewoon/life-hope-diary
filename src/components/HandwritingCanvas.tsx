@@ -289,7 +289,30 @@ export function HandwritingCanvas({
     }
   };
 
+  /** 두 손가락 이동 시작 (진행 중인 필기는 취소) */
+  const startPan = () => {
+    const pts = [...pointersRef.current.values()];
+    const a = pts[0];
+    const b = pts[1];
+    const el = scrollRef.current;
+    if (!a || !b || !el) return;
+    drawingRef.current = null;
+    activePointerRef.current = null;
+    panRef.current = {
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+      left: el.scrollLeft,
+      top: el.scrollTop,
+    };
+    redraw();
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size >= 2) {
+      startPan();
+      return;
+    }
     if (activePointerRef.current !== null) return;
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -307,6 +330,22 @@ export function HandwritingCanvas({
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (pointersRef.current.has(e.pointerId)) {
+      pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    const pan = panRef.current;
+    if (pan && pointersRef.current.size >= 2) {
+      const pts = [...pointersRef.current.values()];
+      const a = pts[0];
+      const b = pts[1];
+      const el = scrollRef.current;
+      if (!a || !b || !el) return;
+      const cx = (a.x + b.x) / 2;
+      const cy = (a.y + b.y) / 2;
+      el.scrollLeft = pan.left - (cx - pan.x);
+      el.scrollTop = pan.top - (cy - pan.y);
+      return;
+    }
     if (activePointerRef.current !== e.pointerId) return;
     const pt = toPoint(e);
     if (tool === "eraser") {
@@ -317,6 +356,7 @@ export function HandwritingCanvas({
     drawingRef.current.push(pt);
     redraw();
   };
+
 
   const endPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (activePointerRef.current !== e.pointerId) return;

@@ -359,8 +359,11 @@ export function HandwritingCanvas({
 
 
   const endPointer = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointersRef.current.delete(e.pointerId);
+    if (pointersRef.current.size < 2) panRef.current = null;
     if (activePointerRef.current !== e.pointerId) return;
     activePointerRef.current = null;
+
     try {
       if (e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);

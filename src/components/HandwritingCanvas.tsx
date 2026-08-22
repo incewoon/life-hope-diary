@@ -458,9 +458,11 @@ export function HandwritingCanvas({
         />
         <div className="relative">
           <div
+            ref={scrollRef}
             className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
-            style={{ maxHeight: "80vh" }}
+            style={{ maxHeight: "80vh", touchAction: "none" }}
           >
+
             <div
               ref={containerRef}
               className={cn("relative", grid && "bg-grid")}

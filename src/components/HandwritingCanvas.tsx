@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import getStroke from "perfect-freehand";
 import {
   Eraser,
@@ -10,10 +10,21 @@ import {
   Loader2,
   ChevronsDown,
   ChevronsRight,
+  Type,
+  Plus,
+  Grid2x2,
+  ChevronDown,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { PEN_COLORS, PEN_WIDTHS, usePen } from "@/lib/pen-context";
+import { PEN_COLORS, PEN_WIDTHS, TEXT_SIZES, usePen } from "@/lib/pen-context";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  CanvasTextLayer,
+  nextTextPosition,
+  parseTextBoxes,
+  type TextBox,
+} from "@/components/CanvasTextLayer";
 import {
   appendStrokes,
   getPage,
@@ -22,6 +33,7 @@ import {
   type Stroke,
   type StrokePoint,
 } from "@/lib/db";
+
 
 /** 가로모드 기준 고정 필기판 설정 */
 export interface FixedBoard {

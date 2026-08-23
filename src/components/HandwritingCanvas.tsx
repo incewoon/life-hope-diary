@@ -137,9 +137,26 @@ export function HandwritingCanvas({
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
+  const [focusTextId, setFocusTextId] = useState<string | null>(null);
 
   const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+
+  const textBoxes = useMemo(() => parseTextBoxes(textsValue), [textsValue]);
+  const textMode = tool === "text";
+
+  const setTextBoxes = useCallback(
+    (boxes: TextBox[]) => onTextsChange?.(JSON.stringify(boxes)),
+    [onTextsChange],
+  );
+
+  const addTextBox = useCallback(() => {
+    const pos = nextTextPosition(textBoxes);
+    const id = `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    setTextBoxes([...textBoxes, { id, ...pos, text: "", size: textSize, color }]);
+    setFocusTextId(id);
+  }, [textBoxes, setTextBoxes, textSize, color]);
+
 
   const invalidateCache = useCallback(() => {
     cacheDirtyRef.current = true;

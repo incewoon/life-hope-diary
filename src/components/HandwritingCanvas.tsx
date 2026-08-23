@@ -512,6 +512,9 @@ export function HandwritingCanvas({
           onUndo={undo}
           onRedo={redo}
           onClear={clearAll}
+          background={background}
+          {...(onBackgroundChange ? { onBackgroundChange } : {})}
+          {...(onTextsChange ? { onAddText: addTextBox } : {})}
         />
         <div className="relative">
           <div
@@ -522,19 +525,30 @@ export function HandwritingCanvas({
 
             <div
               ref={containerRef}
-              className={cn("relative", grid && "bg-grid")}
+              className={cn("relative", bgClass(background))}
               style={{ width: boardWidth, height: boardHeight }}
             >
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 touch-none"
+                className={cn("absolute inset-0 touch-none", textMode && "pointer-events-none")}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endPointer}
                 onPointerCancel={endPointer}
               />
+              {onTextsChange ? (
+                <CanvasTextLayer
+                  boxes={textBoxes}
+                  onChange={setTextBoxes}
+                  scale={fixed.baseWidth}
+                  active={textMode}
+                  focusId={focusTextId}
+                  onFocused={() => setFocusTextId(null)}
+                />
+              ) : null}
             </div>
           </div>
+
           {fixed.rows < MAX_BOARD_UNITS ? (
             <EdgeButton
               icon={ChevronsDown}

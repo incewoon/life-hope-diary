@@ -107,8 +107,13 @@ export function HandwritingCanvas({
   label,
   overlay = false,
   fixed,
+  background = "none",
+  onBackgroundChange,
+  textsValue,
+  onTextsChange,
 }: Props) {
-  const { tool, color, width } = usePen();
+  const { tool, color, width, textSize } = usePen();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const strokesRef = useRef<Stroke[]>([]);

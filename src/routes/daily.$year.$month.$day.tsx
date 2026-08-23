@@ -5,7 +5,7 @@ import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { DaySchedule } from "@/components/DaySchedule";
-import { HandwritingCanvas } from "@/components/HandwritingCanvas";
+import { HandwritingCanvas, type BoardBg } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
 import { usePageText } from "@/lib/use-page-text";
 import { dailyId } from "@/lib/year";
@@ -108,8 +108,11 @@ function DailyPage() {
       <HandwritingCanvas
         pageId={id}
         pageType="daily"
-        grid
         label="자유 필기"
+        background={(fields["canvasBg"] as BoardBg | undefined) ?? "none"}
+        onBackgroundChange={(bg) => setField("canvasBg", bg)}
+        textsValue={fields["canvasTexts"]}
+        onTextsChange={(json) => setField("canvasTexts", json)}
         fixed={{
           baseWidth,
           baseHeight,
@@ -118,6 +121,7 @@ function DailyPage() {
           onChange: (c, r) => setField("canvasGrid", `${c},${r}`),
         }}
       />
+
 
     </PageShell>
   );

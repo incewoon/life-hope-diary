@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import getStroke from "perfect-freehand";
 import {
   Eraser,
@@ -10,10 +10,21 @@ import {
   Loader2,
   ChevronsDown,
   ChevronsRight,
+  Type,
+  Plus,
+  Grid2x2,
+  ChevronDown,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { PEN_COLORS, PEN_WIDTHS, usePen } from "@/lib/pen-context";
+import { PEN_COLORS, PEN_WIDTHS, TEXT_SIZES, usePen } from "@/lib/pen-context";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  CanvasTextLayer,
+  nextTextPosition,
+  parseTextBoxes,
+  type TextBox,
+} from "@/components/CanvasTextLayer";
 import {
   appendStrokes,
   getPage,
@@ -22,6 +33,7 @@ import {
   type Stroke,
   type StrokePoint,
 } from "@/lib/db";
+
 
 /** 가로모드 기준 고정 필기판 설정 */
 export interface FixedBoard {
@@ -107,8 +119,13 @@ export function HandwritingCanvas({
   label,
   overlay = false,
   fixed,
+  background = "none",
+  onBackgroundChange,
+  textsValue,
+  onTextsChange,
 }: Props) {
-  const { tool, color, width } = usePen();
+  const { tool, color, width, textSize } = usePen();
+
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
@@ -132,9 +149,26 @@ export function HandwritingCanvas({
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
+  const [focusTextId, setFocusTextId] = useState<string | null>(null);
 
   const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+
+  const textBoxes = useMemo(() => parseTextBoxes(textsValue), [textsValue]);
+  const textMode = tool === "text";
+
+  const setTextBoxes = useCallback(
+    (boxes: TextBox[]) => onTextsChange?.(JSON.stringify(boxes)),
+    [onTextsChange],
+  );
+
+  const addTextBox = useCallback(() => {
+    const pos = nextTextPosition(textBoxes);
+    const id = `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    setTextBoxes([...textBoxes, { id, ...pos, text: "", size: textSize, color }]);
+    setFocusTextId(id);
+  }, [textBoxes, setTextBoxes, textSize, color]);
+
 
   const invalidateCache = useCallback(() => {
     cacheDirtyRef.current = true;
@@ -478,6 +512,9 @@ export function HandwritingCanvas({
           onUndo={undo}
           onRedo={redo}
           onClear={clearAll}
+          background={background}
+          {...(onBackgroundChange ? { onBackgroundChange } : {})}
+          {...(onTextsChange ? { onAddText: addTextBox } : {})}
         />
         <div className="relative">
           <div
@@ -488,19 +525,30 @@ export function HandwritingCanvas({
 
             <div
               ref={containerRef}
-              className={cn("relative", grid && "bg-grid")}
+              className={cn("relative", bgClass(background))}
               style={{ width: boardWidth, height: boardHeight }}
             >
               <canvas
                 ref={canvasRef}
-                className="absolute inset-0 touch-none"
+                className={cn("absolute inset-0 touch-none", textMode && "pointer-events-none")}
                 onPointerDown={onPointerDown}
                 onPointerMove={onPointerMove}
                 onPointerUp={endPointer}
                 onPointerCancel={endPointer}
               />
+              {onTextsChange ? (
+                <CanvasTextLayer
+                  boxes={textBoxes}
+                  onChange={setTextBoxes}
+                  scale={fixed.baseWidth}
+                  active={textMode}
+                  focusId={focusTextId}
+                  onFocused={() => setFocusTextId(null)}
+                />
+              ) : null}
             </div>
           </div>
+
           {fixed.rows < MAX_BOARD_UNITS ? (
             <EdgeButton
               icon={ChevronsDown}
@@ -583,20 +631,56 @@ function EdgeButton({
 
 
 
+
+function ToolButton({
+  active,
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  icon: typeof Pen;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-muted-foreground transition-colors",
+        active && "bg-background text-primary shadow-sm",
+      )}
+    >
+      <Icon className="size-4" />
+    </button>
+  );
+}
+
 function CanvasToolbar({
   label,
   status,
   onUndo,
   onRedo,
   onClear,
+  background,
+  onBackgroundChange,
+  onAddText,
 }: {
   label?: string | undefined;
   status: "idle" | "saving" | "saved";
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
+  background?: BoardBg;
+  onBackgroundChange?: (bg: BoardBg) => void;
+  onAddText?: () => void;
 }) {
-  const { tool, setTool, color, setColor, width, setWidth } = usePen();
+  const { tool, setTool, color, setColor, width, setWidth, textSize, setTextSize } = usePen();
+  const textMode = tool === "text";
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2">
@@ -605,71 +689,148 @@ function CanvasToolbar({
           {label}
         </span>
       ) : null}
-      <button
-        type="button"
-        aria-label="펜"
-        aria-pressed={tool === "pen"}
-        onClick={() => setTool("pen")}
-        className={cn(
-          "rounded-lg border border-transparent p-1.5 text-muted-foreground",
-          tool === "pen" && "border-border bg-background text-primary",
-        )}
-      >
-        <Pen className="size-4" />
-      </button>
-      <button
-        type="button"
-        aria-label="지우개"
-        aria-pressed={tool === "eraser"}
-        onClick={() => setTool("eraser")}
-        className={cn(
-          "rounded-lg border border-transparent p-1.5 text-muted-foreground",
-          tool === "eraser" && "border-border bg-background text-primary",
-        )}
-      >
-        <Eraser className="size-4" />
-      </button>
 
-      <span className="mx-1 h-5 w-px bg-border" />
-
-      {PEN_COLORS.map((c) => (
-        <button
-          key={c.value}
-          type="button"
-          aria-label={`${c.name} 펜`}
-          aria-pressed={color === c.value}
-          onClick={() => {
-            setColor(c.value);
-            setTool("pen");
-          }}
-          className={cn(
-            "size-6 rounded-full border-2",
-            color === c.value ? "border-primary" : "border-transparent",
-          )}
-          style={{ backgroundColor: c.value }}
+      {/* 모드 토글 */}
+      <div className="flex items-center gap-0.5 rounded-lg border border-border bg-secondary p-0.5">
+        <ToolButton active={tool === "pen"} label="펜" icon={Pen} onClick={() => setTool("pen")} />
+        <ToolButton
+          active={tool === "eraser"}
+          label="지우개"
+          icon={Eraser}
+          onClick={() => setTool("eraser")}
         />
-      ))}
-
-      <span className="mx-1 h-5 w-px bg-border" />
-
-      {PEN_WIDTHS.map((w) => (
-        <button
-          key={w}
-          type="button"
-          aria-label={`굵기 ${w}`}
-          aria-pressed={width === w}
-          onClick={() => setWidth(w)}
-          className={cn(
-            "flex size-6 items-center justify-center rounded-lg border",
-            width === w ? "border-primary bg-background" : "border-transparent",
-          )}
-        >
-          <span
-            className="block rounded-full bg-foreground"
-            style={{ width: w + 1, height: w + 1 }}
+        {onAddText ? (
+          <ToolButton
+            active={textMode}
+            label="텍스트"
+            icon={Type}
+            onClick={() => {
+              if (!textMode) {
+                setTool("text");
+                onAddText();
+              } else {
+                setTool("text");
+              }
+            }}
           />
-        </button>
-      ))}
+        ) : null}
+      </div>
+
+      {textMode && onAddText ? (
+        <>
+          <button
+            type="button"
+            onClick={onAddText}
+            className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+          >
+            <Plus className="size-3.5" /> 텍스트 추가
+          </button>
+          <Popover>
+            <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+              글자 크기
+              <ChevronDown className="size-3.5 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-40 p-2">
+              <div className="flex flex-col gap-1">
+                {TEXT_SIZES.map((s) => (
+                  <button
+                    key={s.key}
+                    type="button"
+                    onClick={() => setTextSize(s.key)}
+                    className={cn(
+                      "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",
+                      textSize === s.key && "text-primary",
+                    )}
+                  >
+                    <span style={{ fontSize: s.px * 0.7 }}>{s.label}</span>
+                    {textSize === s.key ? <Check className="size-3.5" /> : null}
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </>
+      ) : (
+        <Popover>
+          <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+            <span
+              className="block rounded-full"
+              style={{ backgroundColor: color, width: width + 4, height: width + 4 }}
+            />
+            펜 설정
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-52 p-3">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">색상</p>
+            <div className="mb-3 flex items-center gap-2">
+              {PEN_COLORS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  aria-label={`${c.name} 펜`}
+                  onClick={() => {
+                    setColor(c.value);
+                    setTool("pen");
+                  }}
+                  className={cn(
+                    "size-7 rounded-full border-2",
+                    color === c.value ? "border-primary" : "border-transparent",
+                  )}
+                  style={{ backgroundColor: c.value }}
+                />
+              ))}
+            </div>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">굵기</p>
+            <div className="flex items-center gap-2">
+              {PEN_WIDTHS.map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  aria-label={`굵기 ${w}`}
+                  onClick={() => setWidth(w)}
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-lg border",
+                    width === w ? "border-primary bg-secondary" : "border-border",
+                  )}
+                >
+                  <span
+                    className="block rounded-full bg-foreground"
+                    style={{ width: w + 1, height: w + 1 }}
+                  />
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+
+      {onBackgroundChange ? (
+        <Popover>
+          <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+            <Grid2x2 className="size-3.5" />
+            배경
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-40 p-2">
+            <div className="flex flex-col gap-1">
+              {BOARD_BGS.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => onBackgroundChange(b.key)}
+                  className={cn(
+                    "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",
+                    background === b.key && "text-primary",
+                  )}
+                >
+                  {b.label}
+                  {background === b.key ? <Check className="size-3.5" /> : null}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : null}
 
       <span className="mx-1 h-5 w-px bg-border" />
 

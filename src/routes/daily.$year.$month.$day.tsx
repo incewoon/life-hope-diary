@@ -5,7 +5,7 @@ import { ko } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { DaySchedule } from "@/components/DaySchedule";
-import { HandwritingCanvas } from "@/components/HandwritingCanvas";
+import { HandwritingCanvas, type BoardBg } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
 import { usePageText } from "@/lib/use-page-text";
 import { dailyId } from "@/lib/year";

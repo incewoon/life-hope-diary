@@ -666,6 +666,8 @@ function ToolButton({
   );
 }
 
+const FONT_TAG_SIZE: Record<string, string> = { sm: "2", md: "4", lg: "6" };
+
 function CanvasToolbar({
   label,
   status,
@@ -674,7 +676,7 @@ function CanvasToolbar({
   onClear,
   background,
   onBackgroundChange,
-  onAddText,
+  onTextFormat,
 }: {
   label?: string | undefined;
   status: "idle" | "saving" | "saved";
@@ -683,7 +685,7 @@ function CanvasToolbar({
   onClear: () => void;
   background?: BoardBg;
   onBackgroundChange?: (bg: BoardBg) => void;
-  onAddText?: () => void;
+  onTextFormat?: (cmd: "foreColor" | "fontSize", value: string) => void;
 }) {
   const { tool, setTool, color, setColor, width, setWidth, textSize, setTextSize } = usePen();
   const textMode = tool === "text";
@@ -705,32 +707,18 @@ function CanvasToolbar({
           icon={Eraser}
           onClick={() => setTool("eraser")}
         />
-        {onAddText ? (
+        {onTextFormat ? (
           <ToolButton
             active={textMode}
             label="텍스트"
             icon={Type}
-            onClick={() => {
-              if (!textMode) {
-                setTool("text");
-                onAddText();
-              } else {
-                setTool("text");
-              }
-            }}
+            onClick={() => setTool("text")}
           />
         ) : null}
       </div>
 
-      {textMode && onAddText ? (
+      {textMode && onTextFormat ? (
         <>
-          <button
-            type="button"
-            onClick={onAddText}
-            className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-          >
-            <Plus className="size-3.5" /> 텍스트 추가
-          </button>
           <Popover>
             <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
               글자 크기
@@ -742,7 +730,10 @@ function CanvasToolbar({
                   <button
                     key={s.key}
                     type="button"
-                    onClick={() => setTextSize(s.key)}
+                    onClick={() => {
+                      setTextSize(s.key);
+                      onTextFormat("fontSize", FONT_TAG_SIZE[s.key] ?? "4");
+                    }}
                     className={cn(
                       "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",
                       textSize === s.key && "text-primary",
@@ -755,8 +746,39 @@ function CanvasToolbar({
               </div>
             </PopoverContent>
           </Popover>
+          <Popover>
+            <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+              <span
+                className="block size-3.5 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              글자 색상
+              <ChevronDown className="size-3.5 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-40 p-3">
+              <div className="flex items-center gap-2">
+                {PEN_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    aria-label={`${c.name} 글자색`}
+                    onClick={() => {
+                      setColor(c.value);
+                      onTextFormat("foreColor", c.value);
+                    }}
+                    className={cn(
+                      "size-7 rounded-full border-2",
+                      color === c.value ? "border-primary" : "border-transparent",
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </>
       ) : (
+
         <Popover>
           <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
             <span

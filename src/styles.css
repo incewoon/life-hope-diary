@@ -161,3 +161,15 @@
   background-size: 100% 32px;
 }
 
+/* 필기판 텍스트 레이어 글자 크기 (execCommand fontSize 태그 매핑) */
+.canvas-text font[size="2"] {
+  font-size: 14px;
+}
+.canvas-text font[size="4"] {
+  font-size: 18px;
+}
+.canvas-text font[size="6"] {
+  font-size: 24px;
+}
+
+

@@ -108,9 +108,9 @@ function DailyPage() {
       <HandwritingCanvas
         pageId={id}
         pageType="daily"
-        label="자유 필기"
         background={(fields["canvasBg"] as BoardBg | undefined) ?? "none"}
         onBackgroundChange={(bg) => setField("canvasBg", bg)}
+
         textsValue={fields["canvasTexts"]}
         onTextsChange={(json) => setField("canvasTexts", json)}
         fixed={{

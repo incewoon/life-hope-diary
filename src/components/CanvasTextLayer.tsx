@@ -114,9 +114,10 @@ export function CanvasTextLayer({
         onChange(html);
       }}
       className={cn(
-        "absolute inset-0 z-10 whitespace-pre-wrap break-words p-2 leading-snug outline-none",
+        "canvas-text absolute inset-0 z-10 whitespace-pre-wrap break-words p-2 leading-snug outline-none",
         active ? "pointer-events-auto" : "pointer-events-none",
       )}
+
       style={{ width, height, fontSize: baseSize, caretColor: "currentColor" }}
     />
   );

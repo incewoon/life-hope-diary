@@ -11,7 +11,6 @@ import {
   ChevronsDown,
   ChevronsRight,
   Type,
-  Plus,
   Grid2x2,
   ChevronDown,
 } from "lucide-react";
@@ -21,9 +20,9 @@ import { PEN_COLORS, PEN_WIDTHS, TEXT_SIZES, usePen } from "@/lib/pen-context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CanvasTextLayer,
-  nextTextPosition,
-  parseTextBoxes,
-  type TextBox,
+  normalizeCanvasText,
+  sanitizeCanvasHtml,
+  textSizePx,
 } from "@/components/CanvasTextLayer";
 import {
   appendStrokes,
@@ -33,6 +32,7 @@ import {
   type Stroke,
   type StrokePoint,
 } from "@/lib/db";
+
 
 
 /** 가로모드 기준 고정 필기판 설정 */
@@ -149,25 +149,51 @@ export function HandwritingCanvas({
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
-  const [focusTextId, setFocusTextId] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const savedRangeRef = useRef<Range | null>(null);
 
   const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
 
-  const textBoxes = useMemo(() => parseTextBoxes(textsValue), [textsValue]);
+  const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
 
-  const setTextBoxes = useCallback(
-    (boxes: TextBox[]) => onTextsChange?.(JSON.stringify(boxes)),
-    [onTextsChange],
-  );
+  // 팝오버 클릭으로 포커스를 잃어도 직전 커서/선택을 복원할 수 있게 기억
+  useEffect(() => {
+    if (!textMode) return;
+    const onSelChange = () => {
+      const sel = window.getSelection();
+      const el = editorRef.current;
+      if (!sel || sel.rangeCount === 0 || !el) return;
+      if (!el.contains(sel.anchorNode)) return;
+      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    };
+    document.addEventListener("selectionchange", onSelChange);
+    return () => document.removeEventListener("selectionchange", onSelChange);
+  }, [textMode]);
 
-  const addTextBox = useCallback(() => {
-    const pos = nextTextPosition(textBoxes);
-    const id = `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    setTextBoxes([...textBoxes, { id, ...pos, text: "", size: textSize, color }]);
-    setFocusTextId(id);
-  }, [textBoxes, setTextBoxes, textSize, color]);
+  /** 선택 영역이 있으면 그 구간에, 없으면 이후 입력부터 서식 적용 */
+  const applyTextFormat = useCallback((cmd: "foreColor" | "fontSize", value: string) => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (sel && !(sel.rangeCount > 0 && el.contains(sel.anchorNode))) {
+      const range = savedRangeRef.current?.cloneRange() ?? document.createRange();
+      if (!savedRangeRef.current) {
+        range.selectNodeContents(el);
+        range.collapse(false);
+      }
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    document.execCommand("styleWithCSS", false, "false");
+    document.execCommand(cmd, false, value);
+    const html = sanitizeCanvasHtml(el.innerHTML);
+    onTextsChange?.(html);
+  }, [onTextsChange]);
+
+
 
 
   const invalidateCache = useCallback(() => {
@@ -514,7 +540,7 @@ export function HandwritingCanvas({
           onClear={clearAll}
           background={background}
           {...(onBackgroundChange ? { onBackgroundChange } : {})}
-          {...(onTextsChange ? { onAddText: addTextBox } : {})}
+          {...(onTextsChange ? { onTextFormat: applyTextFormat } : {})}
         />
         <div className="relative">
           <div
@@ -538,16 +564,18 @@ export function HandwritingCanvas({
               />
               {onTextsChange ? (
                 <CanvasTextLayer
-                  boxes={textBoxes}
-                  onChange={setTextBoxes}
-                  scale={fixed.baseWidth}
+                  editorRef={editorRef}
+                  value={textHtml}
+                  onChange={onTextsChange}
                   active={textMode}
-                  focusId={focusTextId}
-                  onFocused={() => setFocusTextId(null)}
+                  width={boardWidth}
+                  height={boardHeight}
+                  baseSize={textSizePx(textSize)}
                 />
               ) : null}
             </div>
           </div>
+
 
           {fixed.rows < MAX_BOARD_UNITS ? (
             <EdgeButton
@@ -660,6 +688,8 @@ function ToolButton({
   );
 }
 
+const FONT_TAG_SIZE: Record<string, string> = { sm: "2", md: "4", lg: "6" };
+
 function CanvasToolbar({
   label,
   status,
@@ -668,7 +698,7 @@ function CanvasToolbar({
   onClear,
   background,
   onBackgroundChange,
-  onAddText,
+  onTextFormat,
 }: {
   label?: string | undefined;
   status: "idle" | "saving" | "saved";
@@ -677,7 +707,7 @@ function CanvasToolbar({
   onClear: () => void;
   background?: BoardBg;
   onBackgroundChange?: (bg: BoardBg) => void;
-  onAddText?: () => void;
+  onTextFormat?: (cmd: "foreColor" | "fontSize", value: string) => void;
 }) {
   const { tool, setTool, color, setColor, width, setWidth, textSize, setTextSize } = usePen();
   const textMode = tool === "text";
@@ -699,32 +729,18 @@ function CanvasToolbar({
           icon={Eraser}
           onClick={() => setTool("eraser")}
         />
-        {onAddText ? (
+        {onTextFormat ? (
           <ToolButton
             active={textMode}
             label="텍스트"
             icon={Type}
-            onClick={() => {
-              if (!textMode) {
-                setTool("text");
-                onAddText();
-              } else {
-                setTool("text");
-              }
-            }}
+            onClick={() => setTool("text")}
           />
         ) : null}
       </div>
 
-      {textMode && onAddText ? (
+      {textMode && onTextFormat ? (
         <>
-          <button
-            type="button"
-            onClick={onAddText}
-            className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
-          >
-            <Plus className="size-3.5" /> 텍스트 추가
-          </button>
           <Popover>
             <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
               글자 크기
@@ -736,7 +752,10 @@ function CanvasToolbar({
                   <button
                     key={s.key}
                     type="button"
-                    onClick={() => setTextSize(s.key)}
+                    onClick={() => {
+                      setTextSize(s.key);
+                      onTextFormat("fontSize", FONT_TAG_SIZE[s.key] ?? "4");
+                    }}
                     className={cn(
                       "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",
                       textSize === s.key && "text-primary",
@@ -749,8 +768,39 @@ function CanvasToolbar({
               </div>
             </PopoverContent>
           </Popover>
+          <Popover>
+            <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+              <span
+                className="block size-3.5 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              글자 색상
+              <ChevronDown className="size-3.5 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-40 p-3">
+              <div className="flex items-center gap-2">
+                {PEN_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    aria-label={`${c.name} 글자색`}
+                    onClick={() => {
+                      setColor(c.value);
+                      onTextFormat("foreColor", c.value);
+                    }}
+                    className={cn(
+                      "size-7 rounded-full border-2",
+                      color === c.value ? "border-primary" : "border-transparent",
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
         </>
       ) : (
+
         <Popover>
           <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
             <span

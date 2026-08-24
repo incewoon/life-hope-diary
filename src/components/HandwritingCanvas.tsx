@@ -11,7 +11,6 @@ import {
   ChevronsDown,
   ChevronsRight,
   Type,
-  Plus,
   Grid2x2,
   ChevronDown,
 } from "lucide-react";
@@ -21,9 +20,8 @@ import { PEN_COLORS, PEN_WIDTHS, TEXT_SIZES, usePen } from "@/lib/pen-context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CanvasTextLayer,
-  nextTextPosition,
-  parseTextBoxes,
-  type TextBox,
+  normalizeCanvasText,
+  textSizePx,
 } from "@/components/CanvasTextLayer";
 import {
   appendStrokes,
@@ -33,6 +31,7 @@ import {
   type Stroke,
   type StrokePoint,
 } from "@/lib/db";
+
 
 
 /** 가로모드 기준 고정 필기판 설정 */

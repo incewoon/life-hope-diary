@@ -148,25 +148,30 @@ export function HandwritingCanvas({
 
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
-  const [focusTextId, setFocusTextId] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
   const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
 
-  const textBoxes = useMemo(() => parseTextBoxes(textsValue), [textsValue]);
+  const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
 
-  const setTextBoxes = useCallback(
-    (boxes: TextBox[]) => onTextsChange?.(JSON.stringify(boxes)),
-    [onTextsChange],
-  );
+  /** 선택 영역이 있으면 그 구간에, 없으면 이후 입력부터 서식 적용 */
+  const applyTextFormat = useCallback((cmd: "foreColor" | "fontSize", value: string) => {
+    const el = editorRef.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !el.contains(sel.anchorNode)) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+    document.execCommand(cmd, false, value);
+  }, []);
 
-  const addTextBox = useCallback(() => {
-    const pos = nextTextPosition(textBoxes);
-    const id = `t-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-    setTextBoxes([...textBoxes, { id, ...pos, text: "", size: textSize, color }]);
-    setFocusTextId(id);
-  }, [textBoxes, setTextBoxes, textSize, color]);
 
 
   const invalidateCache = useCallback(() => {

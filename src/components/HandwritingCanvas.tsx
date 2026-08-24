@@ -518,7 +518,7 @@ export function HandwritingCanvas({
           onClear={clearAll}
           background={background}
           {...(onBackgroundChange ? { onBackgroundChange } : {})}
-          {...(onTextsChange ? { onAddText: addTextBox } : {})}
+          {...(onTextsChange ? { onTextFormat: applyTextFormat } : {})}
         />
         <div className="relative">
           <div
@@ -542,16 +542,18 @@ export function HandwritingCanvas({
               />
               {onTextsChange ? (
                 <CanvasTextLayer
-                  boxes={textBoxes}
-                  onChange={setTextBoxes}
-                  scale={fixed.baseWidth}
+                  editorRef={editorRef}
+                  value={textHtml}
+                  onChange={onTextsChange}
                   active={textMode}
-                  focusId={focusTextId}
-                  onFocused={() => setFocusTextId(null)}
+                  width={boardWidth}
+                  height={boardHeight}
+                  baseSize={textSizePx(textSize)}
                 />
               ) : null}
             </div>
           </div>
+
 
           {fixed.rows < MAX_BOARD_UNITS ? (
             <EdgeButton

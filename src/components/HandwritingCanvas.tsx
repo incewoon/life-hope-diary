@@ -149,6 +149,7 @@ export function HandwritingCanvas({
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const savedRangeRef = useRef<Range | null>(null);
 
   const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
@@ -156,21 +157,41 @@ export function HandwritingCanvas({
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
 
+  // 팝오버 클릭으로 포커스를 잃어도 직전 커서/선택을 복원할 수 있게 기억
+  useEffect(() => {
+    if (!textMode) return;
+    const onSelChange = () => {
+      const sel = window.getSelection();
+      const el = editorRef.current;
+      if (!sel || sel.rangeCount === 0 || !el) return;
+      if (!el.contains(sel.anchorNode)) return;
+      savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+    };
+    document.addEventListener("selectionchange", onSelChange);
+    return () => document.removeEventListener("selectionchange", onSelChange);
+  }, [textMode]);
+
   /** 선택 영역이 있으면 그 구간에, 없으면 이후 입력부터 서식 적용 */
   const applyTextFormat = useCallback((cmd: "foreColor" | "fontSize", value: string) => {
     const el = editorRef.current;
     if (!el) return;
     el.focus();
     const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0 || !el.contains(sel.anchorNode)) {
-      const range = document.createRange();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      sel?.removeAllRanges();
-      sel?.addRange(range);
+    if (sel && !(sel.rangeCount > 0 && el.contains(sel.anchorNode))) {
+      const range = savedRangeRef.current?.cloneRange() ?? document.createRange();
+      if (!savedRangeRef.current) {
+        range.selectNodeContents(el);
+        range.collapse(false);
+      }
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
+    document.execCommand("styleWithCSS", false, "false");
     document.execCommand(cmd, false, value);
-  }, []);
+    const html = sanitizeCanvasHtml(el.innerHTML);
+    onTextsChange?.(html);
+  }, [onTextsChange]);
+
 
 
 

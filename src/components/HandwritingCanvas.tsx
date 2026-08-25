@@ -21,7 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   CanvasTextLayer,
   normalizeCanvasText,
-  sanitizeCanvasHtml,
   textSizePx,
 } from "@/components/CanvasTextLayer";
 import {

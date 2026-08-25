@@ -172,26 +172,69 @@ export function HandwritingCanvas({
     return () => document.removeEventListener("selectionchange", onSelChange);
   }, [textMode]);
 
-  /** 선택 영역이 있으면 그 구간에, 없으면 이후 입력부터 서식 적용 */
+  /** 선택 영역이 있으면 그 구간에, 없으면 커서 이후 입력부터 서식 적용 */
   const applyTextFormat = useCallback((cmd: "foreColor" | "fontSize", value: string) => {
     const el = editorRef.current;
     if (!el) return;
-    el.focus();
+    const prop = cmd === "foreColor" ? "color" : "font-size";
+
     const sel = window.getSelection();
-    if (sel && !(sel.rangeCount > 0 && el.contains(sel.anchorNode))) {
-      const range = savedRangeRef.current?.cloneRange() ?? document.createRange();
-      if (!savedRangeRef.current) {
-        range.selectNodeContents(el);
-        range.collapse(false);
-      }
-      sel.removeAllRanges();
-      sel.addRange(range);
+    let range: Range | null = null;
+    if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) {
+      range = sel.getRangeAt(0).cloneRange();
+    } else if (
+      savedRangeRef.current &&
+      el.contains(savedRangeRef.current.commonAncestorContainer)
+    ) {
+      range = savedRangeRef.current.cloneRange();
     }
-    document.execCommand("styleWithCSS", false, "false");
-    document.execCommand(cmd, false, value);
-    const html = sanitizeCanvasHtml(el.innerHTML);
-    onTextsChange?.(html);
-  }, [onTextsChange]);
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+    }
+
+    el.focus({ preventScroll: true });
+
+    const span = document.createElement("span");
+    span.style.setProperty(prop, value);
+
+    if (range.collapsed) {
+      // 커서 위치에 빈 서식 구간을 만들고 그 안으로 커서 이동 → 이후 입력분만 적용
+      span.textContent = "\u200B";
+      range.insertNode(span);
+      const r = document.createRange();
+      r.setStart(span.firstChild as Text, 1);
+      r.collapse(true);
+      sel?.removeAllRanges();
+      sel?.addRange(r);
+      savedRangeRef.current = r.cloneRange();
+      return;
+    }
+
+    const frag = range.extractContents();
+    // 선택 구간 내부의 같은 속성 서식은 제거해 새 값이 우선되게
+    const strip = (node: ParentNode) => {
+      node.querySelectorAll("*").forEach((child) => {
+        if (child instanceof HTMLElement) child.style.removeProperty(prop);
+        if (child.tagName === "FONT") {
+          child.removeAttribute(cmd === "foreColor" ? "color" : "size");
+        }
+      });
+    };
+    strip(frag);
+    span.appendChild(frag);
+    range.insertNode(span);
+
+    const r = document.createRange();
+    r.selectNodeContents(span);
+    sel?.removeAllRanges();
+    sel?.addRange(r);
+    savedRangeRef.current = r.cloneRange();
+
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+
 
 
 

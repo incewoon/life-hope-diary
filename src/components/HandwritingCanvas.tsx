@@ -827,6 +827,7 @@ function CanvasToolbar({
                     key={c.value}
                     type="button"
                     aria-label={`${c.name} 글자색`}
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       setColor(c.value);
                       onTextFormat("foreColor", c.value);

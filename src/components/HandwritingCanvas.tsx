@@ -794,9 +794,10 @@ function CanvasToolbar({
                   <button
                     key={s.key}
                     type="button"
+                    onPointerDown={(e) => e.preventDefault()}
                     onClick={() => {
                       setTextSize(s.key);
-                      onTextFormat("fontSize", FONT_TAG_SIZE[s.key] ?? "4");
+                      onTextFormat("fontSize", `${s.px}px`);
                     }}
                     className={cn(
                       "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",

@@ -123,7 +123,7 @@ export function HandwritingCanvas({
   textsValue,
   onTextsChange,
 }: Props) {
-  const { tool, color, width, textSize } = usePen();
+  const { tool, color, width } = usePen();
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -612,7 +612,7 @@ export function HandwritingCanvas({
                   active={textMode}
                   width={boardWidth}
                   height={boardHeight}
-                  baseSize={textSizePx(textSize)}
+                  baseSize={textSizePx("md")}
                 />
               ) : null}
             </div>

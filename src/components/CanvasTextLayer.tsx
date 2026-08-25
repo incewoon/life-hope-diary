@@ -59,10 +59,14 @@ export function sanitizeCanvasHtml(html: string): string {
         if (!keep) child.removeAttribute(attr.name);
       }
       walk(child);
+      // 서식 대기용 zero-width space만 남은 빈 span 제거
+      if (child.tagName === "SPAN" && /^\u200B*$/.test(child.textContent ?? "")) {
+        child.remove();
+      }
     }
   };
   walk(root);
-  return root.innerHTML;
+  return root.innerHTML.replace(/\u200B/g, "");
 }
 
 interface Props {

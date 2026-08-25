@@ -730,7 +730,6 @@ function ToolButton({
   );
 }
 
-const FONT_TAG_SIZE: Record<string, string> = { sm: "2", md: "4", lg: "6" };
 
 function CanvasToolbar({
   label,

@@ -179,8 +179,10 @@ export function HandwritingCanvas({
   const editorRef = useRef<HTMLDivElement | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
 
-  const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
-  const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+  const baseBoardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
+  const baseBoardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+  const boardWidth = baseBoardWidth ? baseBoardWidth * zoom : undefined;
+  const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";

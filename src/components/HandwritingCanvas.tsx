@@ -13,10 +13,20 @@ import {
   Type,
   Grid2x2,
   ChevronDown,
+  Highlighter,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { PEN_COLORS, PEN_WIDTHS, TEXT_SIZES, usePen } from "@/lib/pen-context";
+import {
+  HIGHLIGHTER_COLOR,
+  HIGHLIGHTER_WIDTH,
+  PEN_COLORS,
+  PEN_WIDTHS,
+  TEXT_SIZES,
+  usePen,
+} from "@/lib/pen-context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CanvasTextLayer,

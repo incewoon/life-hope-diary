@@ -143,8 +143,15 @@ export function HandwritingCanvas({
   onBackgroundChange,
   textsValue,
   onTextsChange,
+  zoom = 1,
+  onZoomChange,
 }: Props) {
-  const { tool, color, width } = usePen();
+  const { tool, color: penColor, width: penWidth } = usePen();
+  const isHighlighter = tool === "highlighter";
+  const color = isHighlighter ? HIGHLIGHTER_COLOR : penColor;
+  const width = isHighlighter ? HIGHLIGHTER_WIDTH : penWidth;
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

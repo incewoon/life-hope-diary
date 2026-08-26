@@ -8,7 +8,11 @@ export const PEN_COLORS = [
 
 export const PEN_WIDTHS = [2, 4, 7] as const;
 
-export type PenTool = "pen" | "eraser" | "text";
+/** 형광펜: 노란 형광색 고정 + 반투명 */
+export const HIGHLIGHTER_COLOR = "rgba(250, 214, 40, 0.38)";
+export const HIGHLIGHTER_WIDTH = 22;
+
+export type PenTool = "pen" | "eraser" | "text" | "highlighter";
 
 export type TextSize = "sm" | "md" | "lg";
 

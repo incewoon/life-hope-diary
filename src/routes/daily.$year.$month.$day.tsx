@@ -75,10 +75,12 @@ function DailyPage() {
   }, [loaded, fields, setField]);
 
 
+  const zoom = Number(fields["canvasZoom"]) || 1;
+
   return (
     <PageShell
-      title={`${y}년 ${m}월 ${d}일`}
-      subtitle={status === "saving" ? "저장 중…" : status === "saved" ? "저장됨" : "일간 플랜"}
+      title="일간 플랜"
+      subtitle={status === "saving" ? "저장 중…" : status === "saved" ? "저장됨" : undefined}
       wide
     >
       <div className="mb-4 flex items-center justify-between gap-2">
@@ -90,6 +92,9 @@ function DailyPage() {
           <ChevronLeft className="size-4" />
           {format(prev, "M월 d일 (E)", { locale: ko })}
         </Link>
+        <p className="text-center text-xl font-bold tracking-tight text-foreground">
+          {format(current, "yyyy년 M월 d일 (E)", { locale: ko })}
+        </p>
         <Link
           to="/daily/$year/$month/$day"
           params={dayParams(next)}
@@ -113,6 +118,8 @@ function DailyPage() {
 
         textsValue={fields["canvasTexts"]}
         onTextsChange={(json) => setField("canvasTexts", json)}
+        zoom={zoom}
+        onZoomChange={(z) => setField("canvasZoom", String(z))}
         fixed={{
           baseWidth,
           baseHeight,

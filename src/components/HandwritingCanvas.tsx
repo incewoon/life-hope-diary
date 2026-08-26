@@ -13,10 +13,20 @@ import {
   Type,
   Grid2x2,
   ChevronDown,
+  Highlighter,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { PEN_COLORS, PEN_WIDTHS, TEXT_SIZES, usePen } from "@/lib/pen-context";
+import {
+  HIGHLIGHTER_COLOR,
+  HIGHLIGHTER_WIDTH,
+  PEN_COLORS,
+  PEN_WIDTHS,
+  TEXT_SIZES,
+  usePen,
+} from "@/lib/pen-context";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   CanvasTextLayer,
@@ -79,6 +89,17 @@ interface Props {
   /** 텍스트 상자 JSON (fixed 모드) */
   textsValue?: string | undefined;
   onTextsChange?: ((json: string) => void) | undefined;
+  /** 화면 배율 (fixed 모드) */
+  zoom?: number | undefined;
+  onZoomChange?: ((zoom: number) => void) | undefined;
+}
+
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 2;
+export const ZOOM_STEP = 0.1;
+
+function clampZoom(z: number): number {
+  return Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)) * 10) / 10;
 }
 
 
@@ -122,8 +143,13 @@ export function HandwritingCanvas({
   onBackgroundChange,
   textsValue,
   onTextsChange,
+  zoom = 1,
+  onZoomChange,
 }: Props) {
-  const { tool, color, width } = usePen();
+  const { tool, color: penColor, width: penWidth } = usePen();
+  const isHighlighter = tool === "highlighter";
+  const color = isHighlighter ? HIGHLIGHTER_COLOR : penColor;
+  const width = isHighlighter ? HIGHLIGHTER_WIDTH : penWidth;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -151,8 +177,10 @@ export function HandwritingCanvas({
   const editorRef = useRef<HTMLDivElement | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
 
-  const boardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
-  const boardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+  const baseBoardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
+  const baseBoardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+  const boardWidth = baseBoardWidth ? baseBoardWidth * zoom : undefined;
+  const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
@@ -308,7 +336,7 @@ export function HandwritingCanvas({
     // 그리는 도중에는 캔버스를 재설정하지 않음 (진행 중인 획 보호)
     if (drawingRef.current) return;
     sizeRef.current = { w, h, dpr };
-    scaleRef.current = fixed ? fixed.baseWidth : w || 1;
+    scaleRef.current = fixed ? fixed.baseWidth * zoom : w || 1;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.max(1, Math.floor(h * dpr));
     canvas.style.width = `${w}px`;
@@ -317,7 +345,7 @@ export function HandwritingCanvas({
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     invalidateCache();
     redraw();
-  }, [redraw, boardWidth, boardHeight, fixed, invalidateCache]);
+  }, [redraw, boardWidth, boardHeight, fixed, zoom, invalidateCache]);
 
 
 
@@ -583,12 +611,14 @@ export function HandwritingCanvas({
           background={background}
           {...(onBackgroundChange ? { onBackgroundChange } : {})}
           {...(onTextsChange ? { onTextFormat: applyTextFormat } : {})}
+          zoom={zoom}
+          {...(onZoomChange ? { onZoomChange } : {})}
         />
         <div className="relative">
           <div
             ref={scrollRef}
-            className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
-            style={{ maxHeight: "80vh", touchAction: "none" }}
+            className="scroll-thick w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
+            style={{ maxHeight: "80vh" }}
           >
 
             <div
@@ -605,15 +635,20 @@ export function HandwritingCanvas({
                 onPointerCancel={endPointer}
               />
               {onTextsChange ? (
-                <CanvasTextLayer
-                  editorRef={editorRef}
-                  value={textHtml}
-                  onChange={onTextsChange}
-                  active={textMode}
-                  width={boardWidth}
-                  height={boardHeight}
-                  baseSize={textSizePx("md")}
-                />
+                <div
+                  className="absolute left-0 top-0 origin-top-left"
+                  style={{ transform: `scale(${zoom})` }}
+                >
+                  <CanvasTextLayer
+                    editorRef={editorRef}
+                    value={textHtml}
+                    onChange={onTextsChange}
+                    active={textMode}
+                    width={baseBoardWidth}
+                    height={baseBoardHeight}
+                    baseSize={textSizePx("md")}
+                  />
+                </div>
               ) : null}
             </div>
           </div>
@@ -740,18 +775,24 @@ function CanvasToolbar({
   background,
   onBackgroundChange,
   onTextFormat,
+  zoom,
+  onZoomChange,
 }: {
   label?: string | undefined;
   status: "idle" | "saving" | "saved";
   onUndo: () => void;
   onRedo: () => void;
   onClear: () => void;
-  background?: BoardBg;
-  onBackgroundChange?: (bg: BoardBg) => void;
-  onTextFormat?: (cmd: "foreColor" | "fontSize", value: string) => void;
+  background?: BoardBg | undefined;
+  onBackgroundChange?: ((bg: BoardBg) => void) | undefined;
+  onTextFormat?: ((cmd: "foreColor" | "fontSize", value: string) => void) | undefined;
+  zoom?: number | undefined;
+  onZoomChange?: ((zoom: number) => void) | undefined;
 }) {
   const { tool, setTool, color, setColor, width, setWidth, textSize, setTextSize } = usePen();
   const textMode = tool === "text";
+  const penMode = !textMode;
+  const currentSizeLabel = TEXT_SIZES.find((s) => s.key === textSize)?.label ?? "보통";
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 py-2">
@@ -761,30 +802,134 @@ function CanvasToolbar({
         </span>
       ) : null}
 
-      {/* 모드 토글 */}
+      {/* 1) 배경 */}
+      {onBackgroundChange ? (
+        <Popover>
+          <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+            <Grid2x2 className="size-3.5" />
+            배경
+            <ChevronDown className="size-3.5 text-muted-foreground" />
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-40 p-2">
+            <div className="flex flex-col gap-1">
+              {BOARD_BGS.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  onClick={() => onBackgroundChange(b.key)}
+                  className={cn(
+                    "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",
+                    background === b.key && "text-primary",
+                  )}
+                >
+                  {b.label}
+                  {background === b.key ? <Check className="size-3.5" /> : null}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : null}
+
+      {/* 2) 필기 / 타이핑 모드 */}
       <div className="flex items-center gap-0.5 rounded-lg border border-border bg-secondary p-0.5">
-        <ToolButton active={tool === "pen"} label="펜" icon={Pen} onClick={() => setTool("pen")} />
-        <ToolButton
-          active={tool === "eraser"}
-          label="지우개"
-          icon={Eraser}
-          onClick={() => setTool("eraser")}
+        <ModeButton
+          active={penMode}
+          label="필기"
+          icon={Pen}
+          onClick={() => setTool("pen")}
         />
         {onTextFormat ? (
-          <ToolButton
+          <ModeButton
             active={textMode}
-            label="텍스트"
+            label="타이핑"
             icon={Type}
             onClick={() => setTool("text")}
           />
         ) : null}
       </div>
 
-      {textMode && onTextFormat ? (
+      {penMode ? (
+        <>
+          {/* 지우개·형광펜은 필기 모드에서만 */}
+          <div className="flex items-center gap-0.5 rounded-lg border border-border bg-secondary p-0.5">
+            <ToolButton
+              active={tool === "pen"}
+              label="펜"
+              icon={Pen}
+              onClick={() => setTool("pen")}
+            />
+            <ToolButton
+              active={tool === "highlighter"}
+              label="형광펜"
+              icon={Highlighter}
+              onClick={() => setTool("highlighter")}
+            />
+            <ToolButton
+              active={tool === "eraser"}
+              label="지우개"
+              icon={Eraser}
+              onClick={() => setTool("eraser")}
+            />
+          </div>
+
+          <Popover>
+            <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
+              <span
+                className="block rounded-full"
+                style={{ backgroundColor: color, width: width + 4, height: width + 4 }}
+              />
+              펜 설정
+              <ChevronDown className="size-3.5 text-muted-foreground" />
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-52 p-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">색상</p>
+              <div className="mb-3 flex items-center gap-2">
+                {PEN_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    aria-label={`${c.name} 펜`}
+                    onClick={() => {
+                      setColor(c.value);
+                      setTool("pen");
+                    }}
+                    className={cn(
+                      "size-7 rounded-full border-2",
+                      color === c.value ? "border-primary" : "border-transparent",
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">굵기</p>
+              <div className="flex items-center gap-2">
+                {PEN_WIDTHS.map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    aria-label={`굵기 ${w}`}
+                    onClick={() => setWidth(w)}
+                    className={cn(
+                      "flex size-8 items-center justify-center rounded-lg border",
+                      width === w ? "border-primary bg-secondary" : "border-border",
+                    )}
+                  >
+                    <span
+                      className="block rounded-full bg-foreground"
+                      style={{ width: w + 1, height: w + 1 }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </>
+      ) : onTextFormat ? (
         <>
           <Popover>
             <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
-              글자 크기
+              {`글자 크기(${currentSizeLabel})`}
               <ChevronDown className="size-3.5 text-muted-foreground" />
             </PopoverTrigger>
             <PopoverContent align="start" className="w-40 p-2">
@@ -812,10 +957,7 @@ function CanvasToolbar({
           </Popover>
           <Popover>
             <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
-              <span
-                className="block size-3.5 rounded-full"
-                style={{ backgroundColor: color }}
-              />
+              <span className="block size-3.5 rounded-full" style={{ backgroundColor: color }} />
               글자 색상
               <ChevronDown className="size-3.5 text-muted-foreground" />
             </PopoverTrigger>
@@ -842,87 +984,6 @@ function CanvasToolbar({
             </PopoverContent>
           </Popover>
         </>
-      ) : (
-
-        <Popover>
-          <PopoverTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
-            <span
-              className="block rounded-full"
-              style={{ backgroundColor: color, width: width + 4, height: width + 4 }}
-            />
-            펜 설정
-            <ChevronDown className="size-3.5 text-muted-foreground" />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-52 p-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">색상</p>
-            <div className="mb-3 flex items-center gap-2">
-              {PEN_COLORS.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  aria-label={`${c.name} 펜`}
-                  onClick={() => {
-                    setColor(c.value);
-                    setTool("pen");
-                  }}
-                  className={cn(
-                    "size-7 rounded-full border-2",
-                    color === c.value ? "border-primary" : "border-transparent",
-                  )}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
-            </div>
-            <p className="mb-2 text-xs font-medium text-muted-foreground">굵기</p>
-            <div className="flex items-center gap-2">
-              {PEN_WIDTHS.map((w) => (
-                <button
-                  key={w}
-                  type="button"
-                  aria-label={`굵기 ${w}`}
-                  onClick={() => setWidth(w)}
-                  className={cn(
-                    "flex size-8 items-center justify-center rounded-lg border",
-                    width === w ? "border-primary bg-secondary" : "border-border",
-                  )}
-                >
-                  <span
-                    className="block rounded-full bg-foreground"
-                    style={{ width: w + 1, height: w + 1 }}
-                  />
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
-      )}
-
-      {onBackgroundChange ? (
-        <Popover>
-          <PopoverTrigger className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground">
-            <Grid2x2 className="size-3.5" />
-            배경
-            <ChevronDown className="size-3.5 text-muted-foreground" />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-40 p-2">
-            <div className="flex flex-col gap-1">
-              {BOARD_BGS.map((b) => (
-                <button
-                  key={b.key}
-                  type="button"
-                  onClick={() => onBackgroundChange(b.key)}
-                  className={cn(
-                    "flex items-center justify-between rounded-md px-2 py-1.5 text-sm hover:bg-secondary",
-                    background === b.key && "text-primary",
-                  )}
-                >
-                  {b.label}
-                  {background === b.key ? <Check className="size-3.5" /> : null}
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
       ) : null}
 
       <span className="mx-1 h-5 w-px bg-border" />
@@ -953,6 +1014,60 @@ function CanvasToolbar({
           </>
         ) : null}
       </span>
+
+      {/* 최우측: 확대 / 축소 */}
+      {onZoomChange ? (
+        <div className="flex items-center gap-0.5 rounded-lg border border-border bg-background px-1 py-0.5">
+          <button
+            type="button"
+            aria-label="축소"
+            onClick={() => onZoomChange(clampZoom((zoom ?? 1) - ZOOM_STEP))}
+            disabled={(zoom ?? 1) <= ZOOM_MIN}
+            className="rounded-md p-1.5 text-foreground disabled:opacity-40"
+          >
+            <Minus className="size-4" />
+          </button>
+          <span className="w-10 text-center text-xs tabular-nums text-muted-foreground">
+            {Math.round((zoom ?? 1) * 100)}%
+          </span>
+          <button
+            type="button"
+            aria-label="확대"
+            onClick={() => onZoomChange(clampZoom((zoom ?? 1) + ZOOM_STEP))}
+            disabled={(zoom ?? 1) >= ZOOM_MAX}
+            className="rounded-md p-1.5 text-foreground disabled:opacity-40"
+          >
+            <Plus className="size-4" />
+          </button>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function ModeButton({
+  active,
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  icon: typeof Pen;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-colors",
+        active && "bg-background text-primary shadow-sm",
+      )}
+    >
+      <Icon className="size-4" />
+      {label}
+    </button>
   );
 }

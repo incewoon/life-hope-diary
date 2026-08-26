@@ -347,7 +347,7 @@ export function HandwritingCanvas({
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     invalidateCache();
     redraw();
-  }, [redraw, boardWidth, boardHeight, fixed, invalidateCache]);
+  }, [redraw, boardWidth, boardHeight, fixed, zoom, invalidateCache]);
 
 
 

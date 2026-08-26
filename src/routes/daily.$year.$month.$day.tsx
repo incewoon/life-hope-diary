@@ -118,6 +118,8 @@ function DailyPage() {
 
         textsValue={fields["canvasTexts"]}
         onTextsChange={(json) => setField("canvasTexts", json)}
+        zoom={zoom}
+        onZoomChange={(z) => setField("canvasZoom", String(z))}
         fixed={{
           baseWidth,
           baseHeight,

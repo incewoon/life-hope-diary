@@ -338,7 +338,7 @@ export function HandwritingCanvas({
     // 그리는 도중에는 캔버스를 재설정하지 않음 (진행 중인 획 보호)
     if (drawingRef.current) return;
     sizeRef.current = { w, h, dpr };
-    scaleRef.current = fixed ? fixed.baseWidth : w || 1;
+    scaleRef.current = fixed ? fixed.baseWidth * zoom : w || 1;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.max(1, Math.floor(h * dpr));
     canvas.style.width = `${w}px`;

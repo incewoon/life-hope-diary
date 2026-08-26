@@ -89,6 +89,17 @@ interface Props {
   /** 텍스트 상자 JSON (fixed 모드) */
   textsValue?: string | undefined;
   onTextsChange?: ((json: string) => void) | undefined;
+  /** 화면 배율 (fixed 모드) */
+  zoom?: number | undefined;
+  onZoomChange?: ((zoom: number) => void) | undefined;
+}
+
+export const ZOOM_MIN = 0.5;
+export const ZOOM_MAX = 2;
+export const ZOOM_STEP = 0.1;
+
+function clampZoom(z: number): number {
+  return Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z)) * 10) / 10;
 }
 
 

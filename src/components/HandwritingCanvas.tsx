@@ -611,12 +611,14 @@ export function HandwritingCanvas({
           background={background}
           {...(onBackgroundChange ? { onBackgroundChange } : {})}
           {...(onTextsChange ? { onTextFormat: applyTextFormat } : {})}
+          zoom={zoom}
+          {...(onZoomChange ? { onZoomChange } : {})}
         />
         <div className="relative">
           <div
             ref={scrollRef}
-            className="w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
-            style={{ maxHeight: "80vh", touchAction: "none" }}
+            className="scroll-thick w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
+            style={{ maxHeight: "80vh" }}
           >
 
             <div
@@ -633,15 +635,20 @@ export function HandwritingCanvas({
                 onPointerCancel={endPointer}
               />
               {onTextsChange ? (
-                <CanvasTextLayer
-                  editorRef={editorRef}
-                  value={textHtml}
-                  onChange={onTextsChange}
-                  active={textMode}
-                  width={boardWidth}
-                  height={boardHeight}
-                  baseSize={textSizePx("md")}
-                />
+                <div
+                  className="absolute left-0 top-0 origin-top-left"
+                  style={{ transform: `scale(${zoom})` }}
+                >
+                  <CanvasTextLayer
+                    editorRef={editorRef}
+                    value={textHtml}
+                    onChange={onTextsChange}
+                    active={textMode}
+                    width={baseBoardWidth}
+                    height={baseBoardHeight}
+                    baseSize={textSizePx("md")}
+                  />
+                </div>
               ) : null}
             </div>
           </div>

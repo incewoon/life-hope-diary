@@ -200,6 +200,8 @@ export function HandwritingCanvas({
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
 
 
+  /** 스크롤 영역이 화면 하단까지 꽉 차도록 계산된 높이 */
+  const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);

@@ -224,11 +224,9 @@ export function HandwritingCanvas({
     measure();
     window.addEventListener("resize", measure);
     window.addEventListener("orientationchange", measure);
-    window.addEventListener("scroll", measure, { passive: true });
     return () => {
       window.removeEventListener("resize", measure);
       window.removeEventListener("orientationchange", measure);
-      window.removeEventListener("scroll", measure);
     };
   }, [fixed]);
   const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;

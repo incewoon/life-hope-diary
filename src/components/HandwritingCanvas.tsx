@@ -210,6 +210,27 @@ export function HandwritingCanvas({
   const baseBoardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const baseBoardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
   const boardWidth = baseBoardWidth ? baseBoardWidth * zoom : undefined;
+
+  // 고정 보드: 스크롤 영역 상단 위치를 재어 화면 하단까지 채우는 높이 계산
+  useEffect(() => {
+    if (!fixed) return;
+    const measure = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const h = Math.max(320, Math.round(window.innerHeight - top - 12));
+      setViewportHeight(h);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    window.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+      window.removeEventListener("scroll", measure);
+    };
+  }, [fixed]);
   const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);

@@ -217,8 +217,11 @@ export function HandwritingCanvas({
     const measure = () => {
       const el = scrollRef.current;
       if (!el) return;
-      const top = el.getBoundingClientRect().top;
-      const h = Math.max(320, Math.round(window.innerHeight - top - 12));
+      // 페이지를 아래로 스크롤했을 때 도구영역 + 필기영역이 화면을 꽉 채우도록,
+      // 화면 높이에서 도구영역 높이(섹션 상단 ~ 스크롤 영역 상단)와 여백만 뺀다.
+      const section = el.closest("section");
+      const toolbar = section ? el.getBoundingClientRect().top - section.getBoundingClientRect().top : 0;
+      const h = Math.max(320, Math.round(window.innerHeight - toolbar - 12));
       setViewportHeight(h);
     };
     measure();

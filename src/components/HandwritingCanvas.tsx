@@ -71,6 +71,33 @@ function bgClass(bg: BoardBg): string | undefined {
   return undefined;
 }
 
+/** 확대 배율에 맞춰 배경 무늬 크기를 함께 조정 (디자인 토큰 색상 유지) */
+function bgStyle(bg: BoardBg, zoom: number): React.CSSProperties | undefined {
+  const border = "var(--color-border)";
+  if (bg === "grid") {
+    const s = 28 * zoom;
+    return {
+      backgroundImage: `linear-gradient(to right, ${border} 1px, transparent 1px), linear-gradient(to bottom, ${border} 1px, transparent 1px)`,
+      backgroundSize: `${s}px ${s}px`,
+    };
+  }
+  if (bg === "dot") {
+    const s = 24 * zoom;
+    return {
+      backgroundImage: `radial-gradient(${border} ${1.5 * zoom}px, transparent ${1.5 * zoom}px)`,
+      backgroundSize: `${s}px ${s}px`,
+    };
+  }
+  if (bg === "line") {
+    const s = 32 * zoom;
+    return {
+      backgroundImage: `linear-gradient(to bottom, ${border} 1px, transparent 1px)`,
+      backgroundSize: `100% ${s}px`,
+    };
+  }
+  return undefined;
+}
+
 interface Props {
   pageId: string;
   pageType: PageType;

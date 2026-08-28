@@ -175,12 +175,15 @@
 
 /* 손가락으로 끌 수 있는 두꺼운 스크롤바 */
 @utility scroll-thick {
-  scrollbar-width: auto;
-  scrollbar-color: var(--color-muted-foreground) var(--color-secondary);
-}
-.scroll-thick {
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
   touch-action: auto;
+}
+/* Firefox 등 표준 스크롤바 */
+@supports not selector(::-webkit-scrollbar) {
+  .scroll-thick {
+    scrollbar-width: auto;
+    scrollbar-color: var(--color-foreground) var(--color-secondary);
+  }
 }
 .scroll-thick::-webkit-scrollbar {
   width: 22px;

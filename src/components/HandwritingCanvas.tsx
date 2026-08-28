@@ -1,3 +1,4 @@
+import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import getStroke from "perfect-freehand";
 import {
@@ -68,6 +69,33 @@ function bgClass(bg: BoardBg): string | undefined {
   if (bg === "grid") return "bg-grid";
   if (bg === "dot") return "bg-dot";
   if (bg === "line") return "bg-line";
+  return undefined;
+}
+
+/** 확대 배율에 맞춰 배경 무늬 크기를 함께 조정 (디자인 토큰 색상 유지) */
+function bgStyle(bg: BoardBg, zoom: number): React.CSSProperties | undefined {
+  const border = "var(--color-border)";
+  if (bg === "grid") {
+    const s = 28 * zoom;
+    return {
+      backgroundImage: `linear-gradient(to right, ${border} 1px, transparent 1px), linear-gradient(to bottom, ${border} 1px, transparent 1px)`,
+      backgroundSize: `${s}px ${s}px`,
+    };
+  }
+  if (bg === "dot") {
+    const s = 24 * zoom;
+    return {
+      backgroundImage: `radial-gradient(${border} ${1.5 * zoom}px, transparent ${1.5 * zoom}px)`,
+      backgroundSize: `${s}px ${s}px`,
+    };
+  }
+  if (bg === "line") {
+    const s = 32 * zoom;
+    return {
+      backgroundImage: `linear-gradient(to bottom, ${border} 1px, transparent 1px)`,
+      backgroundSize: `100% ${s}px`,
+    };
+  }
   return undefined;
 }
 
@@ -172,6 +200,8 @@ export function HandwritingCanvas({
   const panRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
 
 
+  /** 스크롤 영역이 화면 하단까지 꽉 차도록 계산된 높이 */
+  const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -180,7 +210,32 @@ export function HandwritingCanvas({
   const baseBoardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
   const baseBoardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
   const boardWidth = baseBoardWidth ? baseBoardWidth * zoom : undefined;
-  const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
+
+  // 고정 보드: 스크롤 영역 상단 위치를 재어 화면 하단까지 채우는 높이 계산
+  useEffect(() => {
+    if (!fixed) return;
+    const measure = () => {
+      const el = scrollRef.current;
+      if (!el) return;
+      // 페이지를 아래로 스크롤했을 때 도구영역 + 필기영역이 화면을 꽉 채우도록,
+      // 화면 높이에서 도구영역 높이(섹션 상단 ~ 스크롤 영역 상단)와 여백만 뺀다.
+      const section = el.closest("section");
+      const toolbar = section ? el.getBoundingClientRect().top - section.getBoundingClientRect().top : 0;
+      const h = Math.max(320, Math.round(window.innerHeight - toolbar - 12));
+      setViewportHeight(h);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+    };
+  }, [fixed]);
+  // 화면을 꽉 채우도록: 계산된 스크롤 영역 높이보다 작으면 그만큼 늘린다
+  const boardHeight = baseBoardHeight
+    ? Math.max(baseBoardHeight * zoom, (viewportHeight ?? 0) - 26)
+    : undefined;
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
@@ -617,14 +672,14 @@ export function HandwritingCanvas({
         <div className="relative">
           <div
             ref={scrollRef}
-            className="scroll-thick w-full overflow-auto overscroll-contain rounded-xl border border-border bg-card"
-            style={{ maxHeight: "80vh" }}
+            className="scroll-thick w-full overflow-scroll overscroll-contain rounded-xl border border-border bg-card"
+            style={{ height: viewportHeight ?? "80vh" }}
           >
 
             <div
               ref={containerRef}
-              className={cn("relative", bgClass(background))}
-              style={{ width: boardWidth, height: boardHeight }}
+              className="relative"
+              style={{ width: boardWidth, height: boardHeight, ...bgStyle(background, zoom) }}
             >
               <canvas
                 ref={canvasRef}

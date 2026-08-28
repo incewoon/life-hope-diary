@@ -232,7 +232,10 @@ export function HandwritingCanvas({
       window.removeEventListener("orientationchange", measure);
     };
   }, [fixed]);
-  const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
+  // 화면을 꽉 채우도록: 계산된 스크롤 영역 높이보다 작으면 그만큼 늘린다
+  const boardHeight = baseBoardHeight
+    ? Math.max(baseBoardHeight * zoom, (viewportHeight ?? 0) - 26)
+    : undefined;
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";

@@ -205,13 +205,19 @@ export function HandwritingCanvas({
 
   /** 스크롤 영역이 화면 하단까지 꽉 차도록 계산된 높이 */
   const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
+  /** 스크롤 영역의 실제 내부 크기 (기준 크기가 아직 고정되지 않았을 때 사용) */
+  const [measured, setMeasured] = useState<{ w: number; h: number } | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
 
-  const baseBoardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
-  const baseBoardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+  const baseFixed = !!fixed && fixed.baseWidth > 0 && fixed.baseHeight > 0;
+  const effBaseWidth = fixed ? (baseFixed ? fixed.baseWidth : (measured?.w ?? 0)) : 0;
+  const effBaseHeight = fixed ? (baseFixed ? fixed.baseHeight : (measured?.h ?? 0)) : 0;
+
+  const baseBoardWidth = fixed ? effBaseWidth * fixed.cols : undefined;
+  const baseBoardHeight = fixed ? effBaseHeight * fixed.rows : undefined;
   const boardWidth = baseBoardWidth ? baseBoardWidth * zoom : undefined;
 
   // 고정 보드: 스크롤 영역 상단 위치를 재어 화면 하단까지 채우는 높이 계산
@@ -235,8 +241,36 @@ export function HandwritingCanvas({
       window.removeEventListener("orientationchange", measure);
     };
   }, [fixed]);
+
+  // 스크롤 영역 내부(스크롤바 제외) 크기 측정 → 기준 크기 미고정 시 반응형 기본값
+  useEffect(() => {
+    if (!fixed) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const read = () => {
+      const w = Math.max(1, el.clientWidth);
+      const h = Math.max(1, el.clientHeight);
+      setMeasured((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
+    };
+    read();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", read);
+      return () => window.removeEventListener("resize", read);
+    }
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fixed, viewportHeight]);
+
+  /** 첫 콘텐츠 저장 시 현재 측정 크기를 기준 크기로 고정 */
+  const fixBaseIfNeeded = useCallback(() => {
+    if (!fixed || baseFixed || !measured) return;
+    fixed.onFixBase?.(Math.round(measured.w), Math.round(measured.h));
+  }, [fixed, baseFixed, measured]);
+
   // 보드 크기는 확장 버튼(배수)과 배율로만 결정 — 축소해도 자동으로 늘어나지 않음
   const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
+
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";

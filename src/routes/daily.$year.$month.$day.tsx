@@ -38,44 +38,24 @@ function parsePair(raw: string | undefined, fallback: [number, number]): [number
   return [a as number, b as number];
 }
 
-/** 가로모드 기준 필기판 기본 크기 (화면을 한 번만 읽어 산출) */
-function computeBase(): [number, number] {
-  if (typeof window === "undefined") return [960, 560];
-  const long = Math.max(window.innerWidth, window.innerHeight);
-  const short = Math.min(window.innerWidth, window.innerHeight);
-  const w = Math.max(640, Math.round(long - 80 - 48));
-  const h = Math.max(320, Math.round(short - 260));
-  return [w, h];
-}
-
 function DailyPage() {
   const { year, month, day } = Route.useParams();
   const y = Number(year);
   const m = Number(month);
   const d = Number(day);
   const id = dailyId(y, m, d);
-  const { fields, setField, status, loaded } = usePageText(id, "daily");
+  const { fields, setField, status } = usePageText(id, "daily");
 
   const current = new Date(y, m - 1, d);
   const prev = subDays(current, 1);
   const next = addDays(current, 1);
 
-  const [fallbackBase, setFallbackBase] = useState<[number, number]>([960, 560]);
-  useEffect(() => setFallbackBase(computeBase()), []);
-
-  const [baseWidth, baseHeight] = parsePair(fields["canvasBase"], fallbackBase);
+  // 0,0 = 아직 고정되지 않음 → 필기판이 스크롤 영역 크기에 반응형으로 맞춰짐
+  const [baseWidth, baseHeight] = parsePair(fields["canvasBase"], [0, 0]);
   const [cols, rows] = parsePair(fields["canvasGrid"], [1, 1]);
 
-  // 최초 1회 기준 크기 저장
-  useEffect(() => {
-    if (!loaded) return;
-    if (fields["canvasBase"]) return;
-    const [w, h] = computeBase();
-    setField("canvasBase", `${w},${h}`);
-  }, [loaded, fields, setField]);
-
-
   const zoom = Number(fields["canvasZoom"]) || 1;
+
 
   return (
     <PageShell

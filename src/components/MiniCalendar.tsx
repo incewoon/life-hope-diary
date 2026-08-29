@@ -73,19 +73,30 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
         {days.map((day) => {
           const d = day.getDate();
           const dow = day.getDay();
+          const isToday = isSameDay(day, today);
           return (
             <Link
               key={d}
               to="/daily/$year/$month/$day"
               params={{ year: String(year), month: pad2(month), day: pad2(d) }}
-              className={cn(
-                "mx-auto flex size-7 items-center justify-center rounded-full text-xs text-foreground hover:bg-secondary",
-                dow === 0 && "text-destructive",
-                dow === 6 && "text-primary",
-                isSameDay(day, today) && "bg-primary font-bold text-primary-foreground",
-              )}
+              className="mx-auto flex flex-col items-center gap-0.5"
             >
-              {d}
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-full text-xs text-foreground hover:bg-secondary",
+                  dow === 0 && "text-destructive",
+                  dow === 6 && "text-primary",
+                  isToday && "bg-primary font-bold text-primary-foreground",
+                )}
+              >
+                {d}
+              </span>
+              <span
+                className={cn(
+                  "size-1 rounded-full",
+                  scheduleDays.has(d) ? "bg-primary" : "bg-transparent",
+                )}
+              />
             </Link>
           );
         })}

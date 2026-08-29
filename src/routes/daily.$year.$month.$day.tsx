@@ -87,6 +87,7 @@ function DailyPage() {
 
       <DaySchedule
         baseDate={current}
+        pageId={id}
         value={fields["schedule"]}
         onChange={(v) => setField("schedule", v)}
       />
@@ -106,6 +107,9 @@ function DailyPage() {
           cols,
           rows,
           onChange: (c, r) => setField("canvasGrid", `${c},${r}`),
+          onFixBase: (w, h) => {
+            if (!fields["canvasBase"]) setField("canvasBase", `${w},${h}`);
+          },
         }}
       />
 

@@ -426,7 +426,7 @@ export function HandwritingCanvas({
     // 그리는 도중에는 캔버스를 재설정하지 않음 (진행 중인 획 보호)
     if (drawingRef.current) return;
     sizeRef.current = { w, h, dpr };
-    scaleRef.current = fixed ? fixed.baseWidth * zoom : w || 1;
+    scaleRef.current = fixed ? effBaseWidth * zoom : w || 1;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.max(1, Math.floor(h * dpr));
     canvas.style.width = `${w}px`;
@@ -627,6 +627,7 @@ export function HandwritingCanvas({
     invalidateCache();
     redraw();
     flushAppend();
+    fixBaseIfNeeded();
     resize();
   };
 
@@ -732,7 +733,10 @@ export function HandwritingCanvas({
                   <CanvasTextLayer
                     editorRef={editorRef}
                     value={textHtml}
-                    onChange={onTextsChange}
+                    onChange={(json) => {
+                      onTextsChange(json);
+                      if (json.replace(/<[^>]*>/g, "").trim().length > 0) fixBaseIfNeeded();
+                    }}
                     active={textMode}
                     width={baseBoardWidth}
                     height={baseBoardHeight}

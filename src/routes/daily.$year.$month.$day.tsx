@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { addDays, format, subDays } from "date-fns";
 import { ko } from "date-fns/locale";

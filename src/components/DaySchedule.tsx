@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { addHours, format } from "date-fns";
+import { addHours, format, isSameDay } from "date-fns";
 import { ko } from "date-fns/locale";
 import { CalendarPlus, Clock, CalendarDays, Trash2 } from "lucide-react";
 
@@ -13,51 +13,16 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import {
+  parseSchedule,
+  removeScheduleAcrossDays,
+  saveScheduleAcrossDays,
+  scheduleEnd,
+  serializeSchedule,
+  type ScheduleItem,
+} from "@/lib/schedule";
 
-export interface ScheduleItem {
-  id: string;
-  /** 시작 ISO datetime */
-  at: string;
-  /** 종료 ISO datetime (없으면 시작 +1시간) */
-  end?: string;
-  title: string;
-}
-
-export function scheduleEnd(item: ScheduleItem): Date {
-  const start = new Date(item.at);
-  if (item.end) {
-    const e = new Date(item.end);
-    if (!Number.isNaN(e.getTime())) return e;
-  }
-  return addHours(start, 1);
-}
-
-export function parseSchedule(raw: string | undefined): ScheduleItem[] {
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .flatMap((entry): ScheduleItem[] => {
-        if (typeof entry !== "object" || entry === null) return [];
-        const item = entry as Partial<ScheduleItem>;
-        if (typeof item.id !== "string" || typeof item.at !== "string") return [];
-        if (Number.isNaN(new Date(item.at).getTime())) return [];
-        const base: ScheduleItem = {
-          id: item.id,
-          at: item.at,
-          title: typeof item.title === "string" ? item.title : "",
-        };
-        if (typeof item.end === "string" && !Number.isNaN(new Date(item.end).getTime())) {
-          base.end = item.end;
-        }
-        return [base];
-      })
-      .sort((a, b) => a.at.localeCompare(b.at));
-  } catch {
-    return [];
-  }
-}
+export { parseSchedule, scheduleEnd, type ScheduleItem };
 
 /** 현재 시각을 30분 단위로 올림 */
 function roundUpHalfHour(base: Date): Date {
@@ -67,20 +32,30 @@ function roundUpHalfHour(base: Date): Date {
   return d;
 }
 
+function chipLabel(item: ScheduleItem): string {
+  const start = new Date(item.at);
+  const end = scheduleEnd(item);
+  if (isSameDay(start, end)) {
+    return `${format(start, "HH:mm")}–${format(end, "HH:mm")}`;
+  }
+  return `${format(start, "M/d HH:mm")} → ${format(end, "M/d HH:mm")}`;
+}
+
 interface Props {
   /** 현재 보고 있는 날짜 (새 일정 기본값) */
   baseDate: Date;
+  /** 현재 날짜 페이지 id (다중일 저장 시 중복 쓰기 방지) */
+  pageId: string;
   value: string | undefined;
   onChange: (serialized: string) => void;
 }
 
-export function DaySchedule({ baseDate, value, onChange }: Props) {
+export function DaySchedule({ baseDate, pageId, value, onChange }: Props) {
   const items = useMemo(() => parseSchedule(value), [value]);
   const [editing, setEditing] = useState<ScheduleItem | null>(null);
   const [open, setOpen] = useState(false);
 
-  const commit = (next: ScheduleItem[]) =>
-    onChange(JSON.stringify([...next].sort((a, b) => a.at.localeCompare(b.at))));
+  const commit = (next: ScheduleItem[]) => onChange(serializeSchedule(next));
 
   const openNew = () => {
     const start = roundUpHalfHour(baseDate);
@@ -94,15 +69,24 @@ export function DaySchedule({ baseDate, value, onChange }: Props) {
   };
 
   const save = (item: ScheduleItem) => {
-    const exists = items.some((it) => it.id === item.id);
-    commit(exists ? items.map((it) => (it.id === item.id ? item : it)) : [...items, item]);
+    const prev = items.find((it) => it.id === item.id);
+    const rest = items.filter((it) => it.id !== item.id);
+    // 이 날짜에 여전히 포함되는 경우에만 현재 화면 목록에 유지
+    const start = new Date(item.at);
+    const stillHere =
+      startOfDayMs(start) <= startOfDayMs(baseDate) &&
+      startOfDayMs(scheduleEnd(item)) >= startOfDayMs(baseDate);
+    commit(stillHere ? [...rest, item] : rest);
+    void saveScheduleAcrossDays(item, prev, pageId);
     setOpen(false);
   };
 
-  const remove = (id: string) => {
-    commit(items.filter((it) => it.id !== id));
+  const remove = (item: ScheduleItem) => {
+    commit(items.filter((it) => it.id !== item.id));
+    void removeScheduleAcrossDays(item, pageId);
     setOpen(false);
   };
+
 
   return (
     <section className="mb-4 rounded-xl border border-border bg-card p-4">

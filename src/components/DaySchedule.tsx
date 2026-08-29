@@ -109,9 +109,8 @@ export function DaySchedule({ baseDate, pageId, value, onChange }: Props) {
             }}
             className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground transition-colors hover:bg-secondary"
           >
-            <span className="font-semibold text-primary">
-              {format(new Date(item.at), "HH:mm")}–{format(scheduleEnd(item), "HH:mm")}
-            </span>
+            <span className="font-semibold text-primary">{chipLabel(item)}</span>
+
             <span className="max-w-[16rem] truncate">{item.title || "제목 없음"}</span>
           </button>
         ))}

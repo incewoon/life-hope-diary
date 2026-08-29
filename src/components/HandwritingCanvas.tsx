@@ -47,11 +47,14 @@ import {
 
 /** 가로모드 기준 고정 필기판 설정 */
 export interface FixedBoard {
+  /** 0 이하이면 아직 고정되지 않음 → 스크롤 영역 크기에 반응형으로 맞춤 */
   baseWidth: number;
   baseHeight: number;
   cols: number;
   rows: number;
   onChange: (cols: number, rows: number) => void;
+  /** 첫 필기/텍스트가 저장될 때 현재 측정 크기를 고정 */
+  onFixBase?: ((w: number, h: number) => void) | undefined;
 }
 
 export const MAX_BOARD_UNITS = 5;
@@ -202,13 +205,19 @@ export function HandwritingCanvas({
 
   /** 스크롤 영역이 화면 하단까지 꽉 차도록 계산된 높이 */
   const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
+  /** 스크롤 영역의 실제 내부 크기 (기준 크기가 아직 고정되지 않았을 때 사용) */
+  const [measured, setMeasured] = useState<{ w: number; h: number } | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [ready, setReady] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const savedRangeRef = useRef<Range | null>(null);
 
-  const baseBoardWidth = fixed ? fixed.baseWidth * fixed.cols : undefined;
-  const baseBoardHeight = fixed ? fixed.baseHeight * fixed.rows : undefined;
+  const baseFixed = !!fixed && fixed.baseWidth > 0 && fixed.baseHeight > 0;
+  const effBaseWidth = fixed ? (baseFixed ? fixed.baseWidth : (measured?.w ?? 0)) : 0;
+  const effBaseHeight = fixed ? (baseFixed ? fixed.baseHeight : (measured?.h ?? 0)) : 0;
+
+  const baseBoardWidth = fixed ? effBaseWidth * fixed.cols : undefined;
+  const baseBoardHeight = fixed ? effBaseHeight * fixed.rows : undefined;
   const boardWidth = baseBoardWidth ? baseBoardWidth * zoom : undefined;
 
   // 고정 보드: 스크롤 영역 상단 위치를 재어 화면 하단까지 채우는 높이 계산
@@ -232,8 +241,36 @@ export function HandwritingCanvas({
       window.removeEventListener("orientationchange", measure);
     };
   }, [fixed]);
+
+  // 스크롤 영역 내부(스크롤바 제외) 크기 측정 → 기준 크기 미고정 시 반응형 기본값
+  useEffect(() => {
+    if (!fixed) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const read = () => {
+      const w = Math.max(1, el.clientWidth);
+      const h = Math.max(1, el.clientHeight);
+      setMeasured((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
+    };
+    read();
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", read);
+      return () => window.removeEventListener("resize", read);
+    }
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fixed, viewportHeight]);
+
+  /** 첫 콘텐츠 저장 시 현재 측정 크기를 기준 크기로 고정 */
+  const fixBaseIfNeeded = useCallback(() => {
+    if (!fixed || baseFixed || !measured) return;
+    fixed.onFixBase?.(Math.round(measured.w), Math.round(measured.h));
+  }, [fixed, baseFixed, measured]);
+
   // 보드 크기는 확장 버튼(배수)과 배율로만 결정 — 축소해도 자동으로 늘어나지 않음
   const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
+
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
@@ -389,7 +426,7 @@ export function HandwritingCanvas({
     // 그리는 도중에는 캔버스를 재설정하지 않음 (진행 중인 획 보호)
     if (drawingRef.current) return;
     sizeRef.current = { w, h, dpr };
-    scaleRef.current = fixed ? fixed.baseWidth * zoom : w || 1;
+    scaleRef.current = fixed ? effBaseWidth * zoom : w || 1;
     canvas.width = Math.max(1, Math.floor(w * dpr));
     canvas.height = Math.max(1, Math.floor(h * dpr));
     canvas.style.width = `${w}px`;
@@ -398,7 +435,7 @@ export function HandwritingCanvas({
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     invalidateCache();
     redraw();
-  }, [redraw, boardWidth, boardHeight, fixed, zoom, invalidateCache]);
+  }, [redraw, boardWidth, boardHeight, fixed, effBaseWidth, zoom, invalidateCache]);
 
 
 
@@ -590,6 +627,7 @@ export function HandwritingCanvas({
     invalidateCache();
     redraw();
     flushAppend();
+    fixBaseIfNeeded();
     resize();
   };
 
@@ -695,7 +733,10 @@ export function HandwritingCanvas({
                   <CanvasTextLayer
                     editorRef={editorRef}
                     value={textHtml}
-                    onChange={onTextsChange}
+                    onChange={(json) => {
+                      onTextsChange(json);
+                      if (json.replace(/<[^>]*>/g, "").trim().length > 0) fixBaseIfNeeded();
+                    }}
                     active={textMode}
                     width={baseBoardWidth}
                     height={baseBoardHeight}

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   eachDayOfInterval,
@@ -7,6 +8,7 @@ import {
   startOfMonth,
 } from "date-fns";
 
+import { listScheduleDays } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { pad2 } from "@/lib/year";
 
@@ -32,6 +34,17 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
   const days = eachDayOfInterval({ start: first, end: endOfMonth(first) });
   const lead = getDay(first);
   const today = new Date();
+  const [scheduleDays, setScheduleDays] = useState<Set<number>>(() => new Set());
+
+  useEffect(() => {
+    let alive = true;
+    listScheduleDays(year, month)
+      .then((set) => alive && setScheduleDays(set))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [year, month]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-3">
@@ -60,19 +73,30 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
         {days.map((day) => {
           const d = day.getDate();
           const dow = day.getDay();
+          const isToday = isSameDay(day, today);
           return (
             <Link
               key={d}
               to="/daily/$year/$month/$day"
               params={{ year: String(year), month: pad2(month), day: pad2(d) }}
-              className={cn(
-                "mx-auto flex size-7 items-center justify-center rounded-full text-xs text-foreground hover:bg-secondary",
-                dow === 0 && "text-destructive",
-                dow === 6 && "text-primary",
-                isSameDay(day, today) && "bg-primary font-bold text-primary-foreground",
-              )}
+              className="mx-auto flex flex-col items-center gap-0.5"
             >
-              {d}
+              <span
+                className={cn(
+                  "flex size-7 items-center justify-center rounded-full text-xs text-foreground hover:bg-secondary",
+                  dow === 0 && "text-destructive",
+                  dow === 6 && "text-primary",
+                  isToday && "bg-primary font-bold text-primary-foreground",
+                )}
+              >
+                {d}
+              </span>
+              <span
+                className={cn(
+                  "size-1 rounded-full",
+                  scheduleDays.has(d) ? "bg-primary" : "bg-transparent",
+                )}
+              />
             </Link>
           );
         })}

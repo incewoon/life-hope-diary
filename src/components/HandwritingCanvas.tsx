@@ -232,10 +232,8 @@ export function HandwritingCanvas({
       window.removeEventListener("orientationchange", measure);
     };
   }, [fixed]);
-  // 화면을 꽉 채우도록: 계산된 스크롤 영역 높이보다 작으면 그만큼 늘린다
-  const boardHeight = baseBoardHeight
-    ? Math.max(baseBoardHeight * zoom, (viewportHeight ?? 0) - 26)
-    : undefined;
+  // 보드 크기는 확장 버튼(배수)과 배율로만 결정 — 축소해도 자동으로 늘어나지 않음
+  const boardHeight = baseBoardHeight ? baseBoardHeight * zoom : undefined;
 
   const textHtml = useMemo(() => normalizeCanvasText(textsValue), [textsValue]);
   const textMode = tool === "text";
@@ -672,13 +670,13 @@ export function HandwritingCanvas({
         <div className="relative">
           <div
             ref={scrollRef}
-            className="scroll-thick w-full overflow-scroll overscroll-contain rounded-xl border border-border bg-card"
+            className="scroll-thick w-full overflow-scroll overscroll-contain rounded-xl border border-border bg-muted"
             style={{ height: viewportHeight ?? "80vh" }}
           >
 
             <div
               ref={containerRef}
-              className="relative"
+              className="relative bg-card shadow-[0_0_0_1px_var(--color-border)]"
               style={{ width: boardWidth, height: boardHeight, ...bgStyle(background, zoom) }}
             >
               <canvas

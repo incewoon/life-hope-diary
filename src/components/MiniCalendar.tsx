@@ -34,6 +34,17 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
   const days = eachDayOfInterval({ start: first, end: endOfMonth(first) });
   const lead = getDay(first);
   const today = new Date();
+  const [scheduleDays, setScheduleDays] = useState<Set<number>>(() => new Set());
+
+  useEffect(() => {
+    let alive = true;
+    listScheduleDays(year, month)
+      .then((set) => alive && setScheduleDays(set))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [year, month]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-3">

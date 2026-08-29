@@ -24,6 +24,8 @@ import {
 
 export { parseSchedule, scheduleEnd, type ScheduleItem };
 
+const startOfDayMs = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
 /** 현재 시각을 30분 단위로 올림 */
 function roundUpHalfHour(base: Date): Date {
   const d = new Date(base);
@@ -127,7 +129,7 @@ export function DaySchedule({ baseDate, pageId, value, onChange }: Props) {
               initial={editing}
               canDelete={items.some((it) => it.id === editing.id)}
               onSave={save}
-              onDelete={() => remove(editing.id)}
+              onDelete={() => remove(editing)}
               onCancel={() => setOpen(false)}
             />
           ) : null}

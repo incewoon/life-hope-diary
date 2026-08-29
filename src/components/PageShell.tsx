@@ -39,9 +39,9 @@ interface Props {
 
 export function PageShell({ title, subtitle, actions, children, wide }: Props) {
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8 md:pl-20">
+    <div className="min-h-screen bg-background md:pl-20">
       <QuickNav />
-      <div className={cn("mx-auto px-4 pt-4 md:px-8", wide ? "max-w-[1400px]" : "max-w-5xl")}>
+      <div className={cn("mx-auto px-4 pt-14 md:pt-4 md:px-8", wide ? "max-w-[1400px]" : "max-w-5xl")}>
         <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
@@ -68,8 +68,8 @@ function QuickNav() {
     <nav
       aria-label="빠른 이동"
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 flex justify-around border-t border-border bg-card/95 px-2 py-1.5 backdrop-blur",
-        "md:inset-y-0 md:right-auto md:left-0 md:w-20 md:flex-col md:justify-start md:gap-1 md:border-t-0 md:border-r md:py-4",
+        "fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-around border-b border-border bg-card/95 px-2 backdrop-blur",
+        "md:inset-y-0 md:top-auto md:right-auto md:left-0 md:h-auto md:w-20 md:flex-col md:justify-start md:gap-1 md:border-b-0 md:border-r md:py-4",
       )}
     >
       <Link

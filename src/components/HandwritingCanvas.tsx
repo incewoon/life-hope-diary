@@ -47,11 +47,14 @@ import {
 
 /** 가로모드 기준 고정 필기판 설정 */
 export interface FixedBoard {
+  /** 0 이하이면 아직 고정되지 않음 → 스크롤 영역 크기에 반응형으로 맞춤 */
   baseWidth: number;
   baseHeight: number;
   cols: number;
   rows: number;
   onChange: (cols: number, rows: number) => void;
+  /** 첫 필기/텍스트가 저장될 때 현재 측정 크기를 고정 */
+  onFixBase?: ((w: number, h: number) => void) | undefined;
 }
 
 export const MAX_BOARD_UNITS = 5;

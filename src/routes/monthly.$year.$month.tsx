@@ -44,7 +44,20 @@ function MonthlyPage() {
       wide
     >
       <div className="grid gap-4 lg:grid-cols-[320px_260px_1fr]">
-        <MiniCalendar year={y} month={m} />
+        <div
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current == null) return;
+            const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+            touchStartX.current = null;
+            if (Math.abs(dx) < 60) return;
+            goMonth(dx < 0 ? 1 : -1);
+          }}
+        >
+          <MiniCalendar year={y} month={m} />
+        </div>
         <MonthlyChecklist
           value={fields["checklist"]}
           onChange={(next) => setField("checklist", next)}

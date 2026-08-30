@@ -74,7 +74,7 @@ function QuickNav() {
     >
       <Link
         to="/"
-        className="hidden items-center justify-center rounded-xl px-2 py-3 text-[11px] font-bold text-primary md:flex"
+        className="hidden items-center justify-center rounded-xl px-2 py-3 text-[11px] font-bold text-primary [@media(orientation:landscape)]:flex"
       >
         LH
       </Link>

@@ -6,7 +6,7 @@ import { MiniCalendar } from "@/components/MiniCalendar";
 import { MonthlyChecklist } from "@/components/MonthlyChecklist";
 import { PageShell } from "@/components/PageShell";
 import { usePageText } from "@/lib/use-page-text";
-import { monthlyId } from "@/lib/year";
+import { monthlyId, pad2 } from "@/lib/year";
 
 export const Route = createFileRoute("/monthly/$year/$month")({
   head: () => ({

@@ -68,8 +68,8 @@ function QuickNav() {
     <nav
       aria-label="빠른 이동"
       className={cn(
-        "fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-around border-b border-border bg-card/95 px-2 backdrop-blur",
-        "md:inset-y-0 md:top-auto md:right-auto md:left-0 md:h-auto md:w-20 md:flex-col md:justify-start md:gap-1 md:border-b-0 md:border-r md:py-4",
+        "fixed inset-x-0 bottom-0 z-40 flex h-14 items-center justify-around border-t border-border bg-card/95 px-2 backdrop-blur",
+        "md:inset-y-0 md:left-0 md:right-auto md:h-auto md:w-20 md:flex-col md:justify-start md:gap-1 md:border-t-0 md:border-r md:py-4",
       )}
     >
       <Link

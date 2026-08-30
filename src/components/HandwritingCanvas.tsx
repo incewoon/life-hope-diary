@@ -230,7 +230,11 @@ export function HandwritingCanvas({
       // 화면 높이에서 도구영역 높이(섹션 상단 ~ 스크롤 영역 상단)와 여백만 뺀다.
       const section = el.closest("section");
       const toolbar = section ? el.getBoundingClientRect().top - section.getBoundingClientRect().top : 0;
-      const h = Math.max(320, Math.round(window.innerHeight - toolbar - 12));
+      // 세로 모드에서는 하단 고정 메뉴바(h-14 = 56px)가 화면 아래를 가리므로
+      // 그만큼을 추가로 빼서 최하단 스크롤 시 도구영역까지 보이게 한다.
+      const portrait = window.matchMedia?.("(orientation: portrait)").matches ?? false;
+      const bottomReserve = portrait ? 56 + 12 : 12;
+      const h = Math.max(320, Math.round(window.innerHeight - toolbar - bottomReserve));
       setViewportHeight(h);
     };
     measure();

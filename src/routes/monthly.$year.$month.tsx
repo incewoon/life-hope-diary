@@ -26,6 +26,16 @@ function MonthlyPage() {
   const m = Number(month);
   const id = monthlyId(y, m);
   const { fields, setField, status } = usePageText(id, "monthly");
+  const navigate = useNavigate();
+  const touchStartX = useRef<number | null>(null);
+
+  const goMonth = (delta: number) => {
+    const next = new Date(y, m - 1 + delta, 1);
+    navigate({
+      to: "/monthly/$year/$month",
+      params: { year: String(next.getFullYear()), month: pad2(next.getMonth() + 1) },
+    });
+  };
 
   return (
     <PageShell

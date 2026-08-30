@@ -71,8 +71,8 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
           return (
             <Link
               key={d}
-              to="/daily/$year/$month/$day"
-              params={{ year: String(year), month: pad2(month), day: pad2(d) }}
+              to="/monthly/$year/$month"
+              params={{ year: String(year), month: pad2(month) }}
               className="mx-auto flex flex-col items-center gap-0"
             >
               <span

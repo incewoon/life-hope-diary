@@ -53,13 +53,6 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
         <span className="text-xs uppercase tracking-wide text-muted-foreground">
           {MONTH_EN[month - 1]}
         </span>
-        <Link
-          to="/monthly/$year/$month"
-          params={{ year: String(year), month: pad2(month) }}
-          className="ml-auto text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-        >
-          월간
-        </Link>
       </div>
       <div className="grid grid-cols-7 gap-y-1 text-center text-[11px] text-muted-foreground">
         {WEEKDAYS.map((w, i) => (

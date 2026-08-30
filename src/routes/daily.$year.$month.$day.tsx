@@ -71,9 +71,13 @@ function DailyPage() {
           <ChevronLeft className="size-4" />
           {format(prev, "M월 d일 (E)", { locale: ko })}
         </Link>
-        <p className="text-center text-xl font-bold tracking-tight text-foreground">
+        <Link
+          to="/monthly/$year/$month"
+          params={{ year, month }}
+          className="text-center text-xl font-bold tracking-tight text-foreground"
+        >
           {format(current, "yyyy년 M월 d일 (E)", { locale: ko })}
-        </p>
+        </Link>
         <Link
           to="/daily/$year/$month/$day"
           params={dayParams(next)}

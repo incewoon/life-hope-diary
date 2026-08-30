@@ -39,9 +39,9 @@ interface Props {
 
 export function PageShell({ title, subtitle, actions, children, wide }: Props) {
   return (
-    <div className="min-h-screen bg-background md:pl-20">
+    <div className="min-h-screen bg-background [@media(orientation:landscape)]:pl-20">
       <QuickNav />
-      <div className={cn("mx-auto px-4 pt-14 md:pt-4 md:px-8", wide ? "max-w-[1400px]" : "max-w-5xl")}>
+      <div className={cn("mx-auto px-4 pt-4 pb-14 [@media(orientation:landscape)]:pb-4 [@media(orientation:landscape)]:px-8", wide ? "max-w-[1400px]" : "max-w-5xl")}>
         <header className="mb-4 flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
@@ -68,13 +68,13 @@ function QuickNav() {
     <nav
       aria-label="빠른 이동"
       className={cn(
-        "fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-around border-b border-border bg-card/95 px-2 backdrop-blur",
-        "md:inset-y-0 md:top-auto md:right-auto md:left-0 md:h-auto md:w-20 md:flex-col md:justify-start md:gap-1 md:border-b-0 md:border-r md:py-4",
+        "fixed inset-x-0 bottom-0 z-40 flex h-14 items-center justify-around border-t border-border bg-card/95 px-2 backdrop-blur",
+        "[@media(orientation:landscape)]:inset-y-0 [@media(orientation:landscape)]:left-0 [@media(orientation:landscape)]:right-auto [@media(orientation:landscape)]:h-auto [@media(orientation:landscape)]:w-20 [@media(orientation:landscape)]:flex-col [@media(orientation:landscape)]:justify-start [@media(orientation:landscape)]:gap-1 [@media(orientation:landscape)]:border-t-0 [@media(orientation:landscape)]:border-r [@media(orientation:landscape)]:py-4",
       )}
     >
       <Link
         to="/"
-        className="hidden items-center justify-center rounded-xl px-2 py-3 text-[11px] font-bold text-primary md:flex"
+        className="hidden items-center justify-center rounded-xl px-2 py-3 text-[11px] font-bold text-primary [@media(orientation:landscape)]:flex"
       >
         LH
       </Link>

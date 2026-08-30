@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useRef } from "react";
 
 import { HandwritingCanvas } from "@/components/HandwritingCanvas";
 import { MiniCalendar } from "@/components/MiniCalendar";
 import { MonthlyChecklist } from "@/components/MonthlyChecklist";
 import { PageShell } from "@/components/PageShell";
 import { usePageText } from "@/lib/use-page-text";
-import { monthlyId } from "@/lib/year";
+import { monthlyId, pad2 } from "@/lib/year";
 
 export const Route = createFileRoute("/monthly/$year/$month")({
   head: () => ({
@@ -25,6 +26,16 @@ function MonthlyPage() {
   const m = Number(month);
   const id = monthlyId(y, m);
   const { fields, setField, status } = usePageText(id, "monthly");
+  const navigate = useNavigate();
+  const touchStartX = useRef<number | null>(null);
+
+  const goMonth = (delta: number) => {
+    const next = new Date(y, m - 1 + delta, 1);
+    navigate({
+      to: "/monthly/$year/$month",
+      params: { year: String(next.getFullYear()), month: pad2(next.getMonth() + 1) },
+    });
+  };
 
   return (
     <PageShell
@@ -33,7 +44,20 @@ function MonthlyPage() {
       wide
     >
       <div className="grid gap-4 lg:grid-cols-[320px_260px_1fr]">
-        <MiniCalendar year={y} month={m} />
+        <div
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0]?.clientX ?? null;
+          }}
+          onTouchEnd={(e) => {
+            if (touchStartX.current == null) return;
+            const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+            touchStartX.current = null;
+            if (Math.abs(dx) < 60) return;
+            goMonth(dx < 0 ? 1 : -1);
+          }}
+        >
+          <MiniCalendar year={y} month={m} />
+        </div>
         <MonthlyChecklist
           value={fields["checklist"]}
           onChange={(next) => setField("checklist", next)}

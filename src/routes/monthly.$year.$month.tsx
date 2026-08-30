@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useRef } from "react";
 
 import { HandwritingCanvas } from "@/components/HandwritingCanvas";
 import { MiniCalendar } from "@/components/MiniCalendar";

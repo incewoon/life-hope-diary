@@ -50,21 +50,6 @@ const key = (y: number, m: number, d: number) => `${y}-${m}-${d}`;
 /** 해당 연도의 음력 기반 공휴일(설날·추석·부처님오신날) 양력 매핑 */
 function lunarHolidays(year: number): Map<string, string> {
   const map = new Map<string, string>();
-  const add = (lm: number, ld: number, name: string) => {
-    try {
-      const s = Solar.fromDate(
-        new Date(
-          // lunar → solar 변환
-          ...[0],
-        ),
-      );
-      void s;
-    } catch {
-      /* noop */
-    }
-  };
-  void add;
-
   // 설날 (음력 1/1) 및 전후 하루
   const seollal = lunarToSolar(year, 1, 1);
   if (seollal) {
@@ -149,9 +134,9 @@ function holidaysOf(year: number): Map<string, string> {
 
 export interface DayInfo {
   /** 공휴일 이름 (있으면 빨간색 표기) */
-  holiday?: string;
+  holiday?: string | undefined;
   /** 날짜 아래 작게 표기할 라벨 (공휴일 > 절기 > 음력 순) */
-  label?: string;
+  label?: string | undefined;
 }
 
 /** 양력 날짜의 공휴일/절기/음력 정보 */

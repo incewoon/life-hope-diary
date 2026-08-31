@@ -8,6 +8,7 @@ import {
   startOfMonth,
 } from "date-fns";
 
+import { getDayInfo } from "@/lib/korean-calendar";
 import { listScheduleDays } from "@/lib/schedule";
 import { cn } from "@/lib/utils";
 import { pad2 } from "@/lib/year";
@@ -29,7 +30,19 @@ const MONTH_EN = [
   "December",
 ];
 
-export function MiniCalendar({ year, month }: { year: number; month: number }) {
+export function MiniCalendar({
+  year,
+  month,
+  dayTarget = "monthly",
+  showDayInfo = false,
+}: {
+  year: number;
+  month: number;
+  /** 날짜 터치 시 이동할 페이지 */
+  dayTarget?: "monthly" | "daily";
+  /** 공휴일·절기·음력 표기 여부 */
+  showDayInfo?: boolean;
+}) {
   const first = startOfMonth(new Date(year, month - 1, 1));
   const days = eachDayOfInterval({ start: first, end: endOfMonth(first) });
   const lead = getDay(first);
@@ -68,13 +81,20 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
           const dow = day.getDay();
           const isToday = isSameDay(day, today);
           const hasSchedule = scheduleDays.has(d);
+          const info = showDayInfo ? getDayInfo(year, month, d) : undefined;
+          const isHoliday = Boolean(info?.holiday);
+          const linkProps =
+            dayTarget === "daily"
+              ? ({
+                  to: "/daily/$year/$month/$day",
+                  params: { year: String(year), month: pad2(month), day: pad2(d) },
+                } as const)
+              : ({
+                  to: "/monthly/$year/$month",
+                  params: { year: String(year), month: pad2(month) },
+                } as const);
           return (
-            <Link
-              key={d}
-              to="/monthly/$year/$month"
-              params={{ year: String(year), month: pad2(month) }}
-              className="mx-auto flex flex-col items-center gap-0"
-            >
+            <Link key={d} {...linkProps} className="mx-auto flex flex-col items-center gap-0">
               <span
                 className={cn(
                   "size-1 rounded-full mb-0.5",
@@ -86,11 +106,22 @@ export function MiniCalendar({ year, month }: { year: number; month: number }) {
                   "flex size-7 items-center justify-center rounded-full text-xs text-foreground hover:bg-secondary",
                   dow === 0 && "text-destructive",
                   dow === 6 && "text-primary",
+                  isHoliday && "text-destructive",
                   isToday && "bg-primary font-bold text-primary-foreground",
                 )}
               >
                 {d}
               </span>
+              {showDayInfo && (
+                <span
+                  className={cn(
+                    "h-3 max-w-[3.2rem] truncate text-[9px] leading-3",
+                    isHoliday ? "text-destructive" : "text-muted-foreground",
+                  )}
+                >
+                  {info?.label ?? ""}
+                </span>
+              )}
             </Link>
           );
         })}

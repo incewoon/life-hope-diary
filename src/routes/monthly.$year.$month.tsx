@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
 
 import { HandwritingCanvas } from "@/components/HandwritingCanvas";
@@ -39,7 +39,11 @@ function MonthlyPage() {
 
   return (
     <PageShell
-      title={`${y}년 ${m}월 플랜`}
+      title={
+        <Link to="/calendar/$year" params={{ year: String(y) }}>
+          {`${y}년 ${m}월 플랜`}
+        </Link>
+      }
       subtitle={status === "saving" ? "저장 중…" : status === "saved" ? "저장됨" : "달력 · 체크리스트 · 메모"}
       wide
     >
@@ -56,7 +60,7 @@ function MonthlyPage() {
             goMonth(dx < 0 ? 1 : -1);
           }}
         >
-          <MiniCalendar year={y} month={m} />
+          <MiniCalendar year={y} month={m} dayTarget="daily" showDayInfo />
         </div>
         <MonthlyChecklist
           value={fields["checklist"]}

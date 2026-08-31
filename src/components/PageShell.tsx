@@ -29,7 +29,7 @@ const NAV: NavItem[] = [
 ];
 
 interface Props {
-  title: string;
+  title: ReactNode;
   subtitle?: string | undefined;
   actions?: ReactNode;
   children: ReactNode;

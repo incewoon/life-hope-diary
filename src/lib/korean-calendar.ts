@@ -105,27 +105,36 @@ function holidaysOf(year: number): Map<string, string> {
     const [m, d] = md.split("-").map(Number);
     map.set(key(year, m as number, d as number), name);
   }
-  // 대체공휴일: 설날·추석·어린이날·삼일절·광복절·개천절·한글날이 주말과 겹치면 다음 평일
-  const substitutable = ["설날", "추석", "어린이날", "삼일절", "광복절", "개천절", "한글날"];
-  const entries = [...map.entries()];
+  // 대체공휴일 (공휴일에 관한 법률 시행령 기준, 연도 무관 자동 계산)
+  // - 설날·추석 연휴: 토·일과 겹치면 대체
+  // - 어린이날: 토·일 또는 다른 공휴일과 겹치면 대체
+  // - 삼일절·광복절·개천절·한글날·석가탄신일·성탄절: 일요일(또는 다른 공휴일)과 겹치면 대체
+  const satOrSun = ["설날", "추석", "어린이날"];
+  const sunOnly = ["삼일절", "광복절", "개천절", "한글날", "석가탄신일", "성탄절"];
+  const entries = [...map.entries()].sort();
+  const holidayDates = new Set(entries.map(([k]) => k));
   for (const [k, name] of entries) {
-    if (!substitutable.includes(name)) continue;
+    const isSatOrSun = satOrSun.includes(name);
+    if (!isSatOrSun && !sunOnly.includes(name)) continue;
     const [y, m, d] = k.split("-").map(Number);
     const date = new Date(y as number, (m as number) - 1, d as number);
     const dow = date.getDay();
-    const weekend = dow === 0 || (dow === 6 && (name === "설날" || name === "추석"));
-    if (!weekend) continue;
+    // 다른 공휴일과 겹치는 경우(어린이날·일요일 대상 공휴일)도 대체 대상
+    const overlaps = entries.some(([k2, n2]) => k2 === k && n2 !== name);
+    const needsSub = dow === 0 || (isSatOrSun && dow === 6) || (name !== "설날" && name !== "추석" && overlaps);
+    if (!needsSub) continue;
     let cursor = new Date(date.getTime() + 86400000);
     while (
       cursor.getDay() === 0 ||
       cursor.getDay() === 6 ||
-      map.has(key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()))
+      holidayDates.has(key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate())) ||
+      map.get(key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()))?.endsWith("대체휴일")
     ) {
       cursor = new Date(cursor.getTime() + 86400000);
     }
     map.set(
       key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()),
-      "대체공휴일",
+      `${name} 대체휴일`,
     );
   }
   cache.set(year, map);

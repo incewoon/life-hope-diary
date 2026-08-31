@@ -22,7 +22,7 @@ function CalendarPage() {
     <PageShell title={`${y}년 연간 달력`} subtitle="날짜를 누르면 일간 플랜으로 이동합니다" wide>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 12 }, (_, i) => (
-          <MiniCalendar key={i} year={y} month={i + 1} />
+          <MiniCalendar key={i} year={y} month={i + 1} dayTarget="monthly" showDayInfo />
         ))}
       </div>
     </PageShell>

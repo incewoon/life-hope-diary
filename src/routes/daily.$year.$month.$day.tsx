@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DaySchedule } from "@/components/DaySchedule";
 import { HandwritingCanvas, type BoardBg } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
+import { getHoliday } from "@/lib/korean-calendar";
 import { usePageText } from "@/lib/use-page-text";
 import { dailyId } from "@/lib/year";
 
@@ -74,9 +75,17 @@ function DailyPage() {
         <Link
           to="/monthly/$year/$month"
           params={{ year, month }}
-          className="text-center text-xl font-bold tracking-tight text-foreground"
+          className="flex flex-col items-center text-center"
         >
-          {format(current, "yyyy년 M월 d일 (E)", { locale: ko })}
+          <span className="text-xl font-bold tracking-tight text-foreground">
+            {format(current, "yyyy년 M월 d일 (E)", { locale: ko })}
+          </span>
+          {(() => {
+            const holiday = getHoliday(y, m, d);
+            return holiday ? (
+              <span className="text-xs text-destructive">{holiday}</span>
+            ) : null;
+          })()}
         </Link>
         <Link
           to="/daily/$year/$month/$day"

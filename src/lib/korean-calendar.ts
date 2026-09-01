@@ -34,49 +34,38 @@ const JIEQI_KO: Record<string, string> = {
   大寒: "대한",
 };
 
-const SOLAR_HOLIDAYS: Record<string, string> = {
-  "1-1": "신정",
-  "3-1": "삼일절",
-  "5-5": "어린이날",
-  "6-6": "현충일",
-  "8-15": "광복절",
-  "10-3": "개천절",
-  "10-9": "한글날",
-  "12-25": "성탄절",
+const SUBSTITUTE_LABEL = "대체공휴일";
+
+/** 대체공휴일 규칙 */
+type SubRule = "satsun" | "sun" | "none";
+
+/** 양력 고정 공휴일: [월, 일, 이름, 규칙] */
+const SOLAR_HOLIDAYS: [number, number, string, SubRule][] = [
+  [1, 1, "신정", "none"],
+  [3, 1, "삼일절", "satsun"],
+  [5, 1, "노동절", "satsun"],
+  [5, 5, "어린이날", "satsun"],
+  [6, 6, "현충일", "none"],
+  [7, 17, "제헌절", "satsun"],
+  [8, 15, "광복절", "satsun"],
+  [10, 3, "개천절", "satsun"],
+  [10, 9, "한글날", "satsun"],
+  [12, 25, "기독탄신일", "satsun"],
+];
+
+/**
+ * 공식으로 계산할 수 없는 공휴일(선거일·임시공휴일)만 수동으로 추가합니다.
+ * 대체공휴일 자동계산 대상이 아닙니다.
+ */
+const EXTRA_HOLIDAYS: Record<string, string> = {
+  "2026-6-3": "지방선거일",
 };
 
 const key = (y: number, m: number, d: number) => `${y}-${m}-${d}`;
+const dkey = (d: Date) => key(d.getFullYear(), d.getMonth() + 1, d.getDate());
+const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86400000);
 
-/** 해당 연도의 음력 기반 공휴일(설날·추석·부처님오신날) 양력 매핑 */
-function lunarHolidays(year: number): Map<string, string> {
-  const map = new Map<string, string>();
-  // 설날 (음력 1/1) 및 전후 하루
-  const seollal = lunarToSolar(year, 1, 1);
-  if (seollal) {
-    const prev = new Date(seollal.getTime() - 86400000);
-    const next = new Date(seollal.getTime() + 86400000);
-    map.set(key(prev.getFullYear(), prev.getMonth() + 1, prev.getDate()), "설날");
-    map.set(key(seollal.getFullYear(), seollal.getMonth() + 1, seollal.getDate()), "설날");
-    map.set(key(next.getFullYear(), next.getMonth() + 1, next.getDate()), "설날");
-  }
-  // 부처님오신날 (음력 4/8)
-  const buddha = lunarToSolar(year, 4, 8);
-  if (buddha) {
-    map.set(key(buddha.getFullYear(), buddha.getMonth() + 1, buddha.getDate()), "석가탄신일");
-  }
-  // 추석 (음력 8/15) 및 전후 하루
-  const chuseok = lunarToSolar(year, 8, 15);
-  if (chuseok) {
-    const prev = new Date(chuseok.getTime() - 86400000);
-    const next = new Date(chuseok.getTime() + 86400000);
-    map.set(key(prev.getFullYear(), prev.getMonth() + 1, prev.getDate()), "추석");
-    map.set(key(chuseok.getFullYear(), chuseok.getMonth() + 1, chuseok.getDate()), "추석");
-    map.set(key(next.getFullYear(), next.getMonth() + 1, next.getDate()), "추석");
-  }
-  return map;
-}
-
-/** 음력 → 양력. 해당 연도 전체를 훑어 일치하는 날짜를 찾습니다. */
+/** 음력 → 양력. 해당 연도 전후를 훑어 일치하는 날짜를 찾습니다. */
 function lunarToSolar(year: number, lm: number, ld: number): Date | null {
   const start = new Date(year - 1, 10, 1);
   const end = new Date(year + 1, 1, 28);
@@ -88,11 +77,46 @@ function lunarToSolar(year: number, lm: number, ld: number): Date | null {
       date.getDate(),
     ).getLunar();
     if (lunar.getMonth() === lm && lunar.getDay() === ld) {
-      // 명절은 해당 양력 연도에 속하는 것만 사용
       if (date.getFullYear() === year) return date;
     }
   }
   return null;
+}
+
+interface HolidayEntry {
+  date: Date;
+  name: string;
+  rule: SubRule;
+}
+
+function baseHolidays(year: number): HolidayEntry[] {
+  const list: HolidayEntry[] = [];
+
+  for (const [m, d, name, rule] of SOLAR_HOLIDAYS) {
+    list.push({ date: new Date(year, m - 1, d), name, rule });
+  }
+
+  // 설날 연휴 (음력 12월 말일 · 1/1 · 1/2)
+  const seollal = lunarToSolar(year, 1, 1);
+  if (seollal) {
+    list.push({ date: addDays(seollal, -1), name: "설날", rule: "sun" });
+    list.push({ date: seollal, name: "설날", rule: "sun" });
+    list.push({ date: addDays(seollal, 1), name: "설날", rule: "sun" });
+  }
+
+  // 부처님오신날 (음력 4/8)
+  const buddha = lunarToSolar(year, 4, 8);
+  if (buddha) list.push({ date: buddha, name: "부처님오신날", rule: "satsun" });
+
+  // 추석 연휴 (음력 8/14 · 15 · 16)
+  const chuseok = lunarToSolar(year, 8, 15);
+  if (chuseok) {
+    list.push({ date: addDays(chuseok, -1), name: "추석", rule: "sun" });
+    list.push({ date: chuseok, name: "추석", rule: "sun" });
+    list.push({ date: addDays(chuseok, 1), name: "추석", rule: "sun" });
+  }
+
+  return list.filter((h) => h.date.getFullYear() === year);
 }
 
 const cache = new Map<number, Map<string, string>>();
@@ -100,43 +124,52 @@ const cache = new Map<number, Map<string, string>>();
 function holidaysOf(year: number): Map<string, string> {
   const cached = cache.get(year);
   if (cached) return cached;
-  const map = lunarHolidays(year);
-  for (const [md, name] of Object.entries(SOLAR_HOLIDAYS)) {
-    const [m, d] = md.split("-").map(Number);
-    map.set(key(year, m as number, d as number), name);
+
+  const entries = baseHolidays(year).sort((a, b) => a.date.getTime() - b.date.getTime());
+  const map = new Map<string, string>();
+  const holidaySet = new Set<string>();
+
+  for (const e of entries) {
+    const k = dkey(e.date);
+    if (!map.has(k)) map.set(k, e.name);
+    holidaySet.add(k);
   }
-  // 대체공휴일 (공휴일에 관한 법률 시행령 기준, 연도 무관 자동 계산)
-  // - 설날·추석 연휴: 토·일과 겹치면 대체
-  // - 어린이날: 토·일 또는 다른 공휴일과 겹치면 대체
-  // - 삼일절·광복절·개천절·한글날·석가탄신일·성탄절: 일요일(또는 다른 공휴일)과 겹치면 대체
-  const satOrSun = ["설날", "추석", "어린이날"];
-  const sunOnly = ["삼일절", "광복절", "개천절", "한글날", "석가탄신일", "성탄절"];
-  const entries = [...map.entries()].sort();
-  const holidayDates = new Set(entries.map(([k]) => k));
-  for (const [k, name] of entries) {
-    const isSatOrSun = satOrSun.includes(name);
-    if (!isSatOrSun && !sunOnly.includes(name)) continue;
-    const [y, m, d] = k.split("-").map(Number);
-    const date = new Date(y as number, (m as number) - 1, d as number);
-    const dow = date.getDay();
-    // 다른 공휴일과 겹치는 경우(어린이날·일요일 대상 공휴일)도 대체 대상
-    const overlaps = entries.some(([k2, n2]) => k2 === k && n2 !== name);
-    const needsSub = dow === 0 || (isSatOrSun && dow === 6) || (name !== "설날" && name !== "추석" && overlaps);
-    if (!needsSub) continue;
-    let cursor = new Date(date.getTime() + 86400000);
+  for (const [k, name] of Object.entries(EXTRA_HOLIDAYS)) {
+    const [y] = k.split("-").map(Number);
+    if (y !== year) continue;
+    if (!map.has(k)) map.set(k, name);
+    holidaySet.add(k);
+  }
+
+  /** 다음 첫 번째 비공휴일 (일요일·토요일·공휴일·대체공휴일 제외) */
+  const nextFreeDay = (from: Date): Date => {
+    let cursor = addDays(from, 1);
     while (
       cursor.getDay() === 0 ||
       cursor.getDay() === 6 ||
-      holidayDates.has(key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate())) ||
-      map.get(key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()))?.endsWith("대체휴일")
+      holidaySet.has(dkey(cursor))
     ) {
-      cursor = new Date(cursor.getTime() + 86400000);
+      cursor = addDays(cursor, 1);
     }
-    map.set(
-      key(cursor.getFullYear(), cursor.getMonth() + 1, cursor.getDate()),
-      `${name} 대체휴일`,
-    );
+    return cursor;
+  };
+
+  // 대체공휴일 계산
+  const seen = new Set<string>();
+  for (const e of entries) {
+    if (e.rule === "none") continue;
+    const k = dkey(e.date);
+    const dow = e.date.getDay();
+    const overlaps = seen.has(k); // 같은 날 다른 공휴일과 겹침
+    const needsSub = dow === 0 || (e.rule === "satsun" && dow === 6) || overlaps;
+    seen.add(k);
+    if (!needsSub) continue;
+    const sub = nextFreeDay(e.date);
+    const sk = dkey(sub);
+    map.set(sk, SUBSTITUTE_LABEL);
+    holidaySet.add(sk);
   }
+
   cache.set(year, map);
   return map;
 }

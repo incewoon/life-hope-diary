@@ -181,15 +181,19 @@ export interface DayInfo {
   label?: string | undefined;
 }
 
-/** 양력 날짜의 공휴일/절기/음력 정보 */
+/** 양력 날짜의 공휴일 이름만 반환 */
+export function getHoliday(year: number, month: number, day: number): string | undefined {
+  return holidaysOf(year).get(key(year, month, day));
+}
+
+/** 양력 날짜의 공휴일/절기/음력 정보 (음력은 매주 일요일만 표기) */
 export function getDayInfo(year: number, month: number, day: number): DayInfo {
   const holiday = holidaysOf(year).get(key(year, month, day));
   const lunar = Solar.fromYmd(year, month, day).getLunar();
   const jieqiRaw = lunar.getJieQi();
   const jieqi = jieqiRaw ? (JIEQI_KO[jieqiRaw] ?? jieqiRaw) : "";
-  const ld = lunar.getDay();
-  const lm = Math.abs(lunar.getMonth());
-  const lunarLabel = ld % 5 === 0 || ld === 1 ? `${lm}.${ld}` : "";
+  const isSunday = new Date(year, month - 1, day).getDay() === 0;
+  const lunarLabel = isSunday ? `${Math.abs(lunar.getMonth())}.${lunar.getDay()}` : "";
 
   return {
     holiday,

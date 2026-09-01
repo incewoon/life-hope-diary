@@ -1,29 +1,36 @@
-# 일간/월간 플랜 개선 3건
+# 회의록 페이지 재구성
 
-## 1. 여러 날에 걸친 일정 동기화
+`src/routes/meetings.tsx`의 상세 영역을 개편합니다. 좌측 목록(DocList)과 하단 필기 캔버스는 그대로 유지합니다.
 
-- 일정 저장 시 시작일~종료일 사이의 모든 날짜 페이지에 같은 일정(같은 id)이 저장됩니다.
-- 어느 날짜에서 수정/삭제하든 같은 id를 가진 일정이 모든 날짜에서 함께 수정·삭제됩니다.
-- 기간을 줄이거나 옮기면, 더 이상 포함되지 않는 날짜에서는 자동으로 제거됩니다.
-- 하루짜리 일정은 지금과 동일하게 동작합니다.
-- 칩 표시: 다른 날까지 이어지는 일정은 `8/29 09:00 → 8/31 18:00 · 일정명` 형태로 날짜까지 보여 하루짜리와 구분됩니다.
+## 1. 일시 — 다이얼로그 선택식
 
-## 2. 월간 달력 날짜 도트 표시
+기존 "일시 / 장소" 자유 텍스트를 없애고, 버튼을 누르면 다이얼로그가 열려 **날짜 1개 + 시간 1개**만 고르는 방식으로 바꿉니다(기간 아님).
 
-- 월간 플랜(및 연간 달력)의 미니 달력에서 일정이 있는 날짜 아래에 점을 1개만 표시합니다(일정 개수와 무관).
-- 저장된 일간 페이지의 일정 데이터를 읽어 표시하며, 일정이 없는 날에는 표시하지 않습니다.
+- `DaySchedule`의 날짜/시간 선택 UI(shadcn Calendar 팝오버 + 30분 단위 시간 목록)를 재사용할 수 있게 `src/components/DateTimePicker.tsx`로 분리합니다. `DaySchedule` 동작은 변경 없음.
+- 저장은 회의록 페이지의 `textFields.datetime`에 ISO 문자열로 보관, 표시는 `2026. 9. 1 (화) 오후 2:00` 형식.
+- 값이 없으면 "일시 선택" 버튼만 표시합니다.
 
-## 3. 처음 생성되는 필기/텍스트 영역 크기를 스크롤 화면에 맞춤
+## 2. 장소 / 3. 참석자
 
-- 현재는 화면 크기를 추정해 계산한 값이라 실제 스크롤 영역보다 세로는 짧고 가로는 넓어 불필요한 하단 스크롤이 생깁니다.
-- 확장 버튼을 누르지 않은 기본 상태(1x1)에서는 필기판이 실제 보이는 스크롤 영역과 정확히 같은 크기가 되도록 실제 영역을 측정해 기준 크기를 정합니다.
-- 태블릿 화면 크기·가로/세로 전환에 따라 기준 크기가 반응형으로 다시 맞춰집니다.
-- 확장 버튼으로 늘린 배수(cols/rows)와 확대/축소, 비활성 영역 음영 표시는 지금 동작 그대로 유지됩니다.
+각각 한 줄짜리 텍스트 입력으로 배치합니다(기존 textarea 3분할 대체). 필드 키는 `장소`, `참석자`를 그대로 사용해 기존 데이터가 유지됩니다. 기존 "안건" 필드는 제거하되 데이터는 남겨둡니다(삭제하지 않음).
+
+## 4. 녹음 영역
+
+`src/components/MeetingRecorder.tsx` 신규.
+
+- **녹음 버튼**: 시작/정지 토글 아이콘(마이크 ↔ 정지), 녹음 중 빨간 점 표시.
+- **경과 시간**: `시:분:초` (00:12:34) 형식으로 1초마다 갱신.
+- **재생**: 녹음이 끝나면 `<audio controls>`로 재생·탐색 가능. 다시 녹음하면 이전 녹음은 대체됩니다.
+- **제미나이로 요약 요청**: 녹음이 있을 때만 활성. 공유 시트(Web Share API, `navigator.share({ files })`)로 녹음 파일을 전달해 목록에서 제미나이 앱을 선택하게 합니다. 동시에 요약 프롬프트(회의명·일시·장소·참석자를 반영한 한국어 요약 요청문)를 클립보드에 복사하고 토스트로 안내합니다. 파일 공유를 지원하지 않는 브라우저에서는 버튼 대신 "이 기기에서는 공유가 지원되지 않습니다" 안내와 파일 다운로드 대체 버튼을 노출합니다.
+- **저장 정책**: 선택하신 대로 **세션 동안만** 유지합니다. IndexedDB에 저장하지 않으며, 다른 회의록으로 이동하거나 앱을 다시 열면 녹음은 사라집니다. 이 점을 영역 하단에 작은 안내문으로 표시합니다.
+
+## 5. 필기 영역
+
+기존 `HandwritingCanvas`(pageId = 회의록 id, `label="회의 내용"`) 그대로 유지합니다.
 
 ## 기술 메모
 
-- `src/lib/schedule.ts`(신규): `ScheduleItem` 타입/파싱을 `DaySchedule.tsx`에서 분리하고, `saveScheduleAcrossDays(item, prevItem?)`, `removeScheduleAcrossDays(id, item)`, `listScheduleDays(year, month)` 구현. Dexie `getPage`/`saveTextFields`로 `daily-YYYY-MM-DD` 페이지의 `schedule` 필드를 직접 갱신(현재 보고 있는 날짜는 `onChange`로 반영해 화면 즉시 갱신).
-- `src/components/DaySchedule.tsx`: 저장/삭제 시 위 헬퍼 호출(이전 기간과 새 기간의 차집합 날짜에서 제거), 칩 라벨에 멀티데이 포맷 추가.
-- `src/components/MiniCalendar.tsx`: `useEffect`로 해당 월의 daily 페이지를 조회해 일정 있는 날짜 Set 생성, 날짜 버튼 아래 `size-1 rounded-full bg-primary` 도트 렌더(오늘 강조와 겹치지 않게 배치).
-- `src/components/HandwritingCanvas.tsx`: 스크롤 컨테이너 ref의 `clientWidth`/`clientHeight`를 측정해 `measuredBase`를 산출하고, ResizeObserver로 회전/리사이즈 시 갱신.
-- `src/routes/daily.$year.$month.$day.tsx`: `canvasBase` 고정 저장·`computeBase()` 추정값 대신 측정된 기준 크기를 사용하도록 정리(기존 저장값이 있어도 1x1일 때는 측정값 우선).
+- 녹음은 `navigator.mediaDevices.getUserMedia({ audio: true })` + `MediaRecorder`. blob은 컴포넌트 state와 `URL.createObjectURL`로만 보관하고 언마운트 시 revoke.
+- 마이크 권한 거부 시 토스트로 안내하고 버튼은 유지합니다.
+- 파일명은 `회의록-{회의명}-{yyyyMMdd-HHmm}.webm`(Safari는 `.mp4`) 형식으로 MIME에 맞춰 생성.
+- DB 스키마 변경 없음. 추가 필드는 `textFields.datetime` 하나뿐입니다.

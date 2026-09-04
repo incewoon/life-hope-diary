@@ -12,10 +12,17 @@ function formatElapsed(sec: number) {
 }
 
 function extFor(mime: string) {
-  if (mime.includes("mp4")) return "mp4";
+  if (mime.includes("mp4")) return "m4a";
   if (mime.includes("ogg")) return "ogg";
   if (mime.includes("wav")) return "wav";
   return "webm";
+}
+
+/** 제미나이·타 앱 호환성이 좋은 순서로 녹음 형식 선택 */
+function pickMimeType(): string | undefined {
+  const candidates = ["audio/mp4", "audio/mpeg", "audio/webm;codecs=opus", "audio/webm"];
+  if (typeof MediaRecorder === "undefined") return undefined;
+  return candidates.find((m) => MediaRecorder.isTypeSupported(m));
 }
 
 interface Props {

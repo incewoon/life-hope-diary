@@ -1,7 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
+import { format } from "date-fns";
+import { ko } from "date-fns/locale";
+import { CalendarClock } from "lucide-react";
+
+import { DateTimeRow } from "@/components/DateTimePicker";
 import { DocList } from "@/components/DocList";
+import { MeetingRecorder } from "@/components/MeetingRecorder";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { HandwritingCanvas } from "@/components/HandwritingCanvas";
 import { PageShell } from "@/components/PageShell";
 import { docTitle, useDocList } from "@/lib/use-doc-list";
@@ -50,7 +63,7 @@ function MeetingsPage() {
           items={docs.map((d) => ({
             id: d.id,
             title: docTitle(d, "회의록", "회의명"),
-            sub: d.textFields?.["일시 / 장소"] || undefined,
+            sub: formatMeetingDate(d.textFields?.["datetime"]) || undefined,
           }))}
           selectedId={id}
           onSelect={(next) => void navigate({ search: { id: next } })}
@@ -128,5 +141,78 @@ function MeetingDetail({
 
       <HandwritingCanvas pageId={pageId} pageType="meeting" grid minHeight={520} label="회의 내용" />
     </section>
+  );
+}
+
+export function formatMeetingDate(iso: string | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return format(d, "yyyy. M. d (E) a h:mm", { locale: ko });
+}
+
+function roundUpHalfHour(base: Date): Date {
+  const d = new Date(base);
+  d.setHours(d.getHours(), d.getMinutes() >= 30 ? 60 : 30, 0, 0);
+  return d;
+}
+
+function MeetingDateTime({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (iso: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<Date>(() => new Date());
+
+  const label = formatMeetingDate(value);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          const base = value ? new Date(value) : roundUpHalfHour(new Date());
+          setDraft(Number.isNaN(base.getTime()) ? roundUpHalfHour(new Date()) : base);
+          setOpen(true);
+        }}
+        className="flex h-[42px] w-full items-center gap-2 rounded-xl border border-border bg-card px-3 text-left text-sm text-foreground"
+      >
+        <CalendarClock className="size-4 shrink-0 text-muted-foreground" />
+        <span className={label ? "truncate" : "truncate text-muted-foreground"}>
+          {label || "일시 선택"}
+        </span>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>회의 일시</DialogTitle>
+          </DialogHeader>
+          <DateTimeRow label="일시" value={draft} onChange={setDraft} />
+          <DialogFooter className="gap-2">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-xl border border-border px-4 py-2 text-sm text-foreground"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onChange(draft.toISOString());
+                setOpen(false);
+              }}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            >
+              저장
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

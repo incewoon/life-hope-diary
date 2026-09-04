@@ -97,18 +97,34 @@ function MeetingDetail({
       </div>
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        {FIELDS.map((k) => (
+        <div>
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">일시</span>
+          <MeetingDateTime
+            value={fields["datetime"] ?? ""}
+            onChange={(iso) => setField("datetime", iso)}
+          />
+        </div>
+        {(["장소", "참석자"] as const).map((k) => (
           <label key={k} className="block">
             <span className="mb-1 block text-xs font-medium text-muted-foreground">{k}</span>
-            <textarea
+            <input
               value={fields[k] ?? ""}
               onChange={(e) => setField(k, e.target.value)}
-              rows={3}
-              className="w-full resize-none rounded-xl border border-border bg-card p-3 text-sm text-foreground outline-none focus:border-primary"
+              placeholder={k}
+              className="h-[42px] w-full rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
             />
           </label>
         ))}
       </div>
+
+      <MeetingRecorder
+        meta={{
+          title: fields["회의명"] ?? "",
+          datetime: formatMeetingDate(fields["datetime"]),
+          place: fields["장소"] ?? "",
+          attendees: fields["참석자"] ?? "",
+        }}
+      />
 
       <HandwritingCanvas pageId={pageId} pageType="meeting" grid minHeight={520} label="회의 내용" />
     </section>

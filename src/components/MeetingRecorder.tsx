@@ -101,7 +101,7 @@ export function MeetingRecorder({ meta }: Props) {
   }, []);
 
   const prompt = [
-    "첨부한 회의 녹음 파일을 듣고 한국어로 회의록을 정리해 주세요.",
+    "지금 첨부할 회의 녹음 파일을 듣고 한국어로 회의록을 정리해 주세요.",
     "1) 회의 요약  2) 주요 논의 내용  3) 결정 사항  4) 후속 조치(담당자/기한)",
     meta.title ? `회의명: ${meta.title}` : "",
     meta.datetime ? `일시: ${meta.datetime}` : "",
@@ -111,39 +111,82 @@ export function MeetingRecorder({ meta }: Props) {
     .filter(Boolean)
     .join("\n");
 
+  /** URL 파라미터로 넘길 압축 프롬프트 */
+  const urlPrompt = prompt.slice(0, 1500);
+
   const canShare =
     typeof navigator !== "undefined" &&
     typeof navigator.canShare === "function" &&
     !!file &&
     navigator.canShare({ files: [file] });
 
-  const share = async () => {
-    if (!file) return;
+  const copyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(prompt);
+      return true;
     } catch {
-      /* 클립보드 실패는 무시 */
+      return false;
     }
+  };
+
+  const saveFile = () => {
+    if (!file || !url) return false;
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  /** 주 동작: 파일 저장 + 프롬프트 복사 후 제미나이를 프롬프트가 채워진 상태로 연다 */
+  const openGemini = () => {
+    if (!file) return;
+    const geminiUrl = `https://gemini.google.com/app?q=${encodeURIComponent(urlPrompt)}`;
+    const win = window.open(geminiUrl, "_blank", "noopener");
+    const saved = saveFile();
+    void copyPrompt();
+    if (!win) {
+      toast.error("제미나이 창을 열지 못했습니다", {
+        description: "브라우저의 팝업 차단을 해제하거나 게시된 주소를 크롬에서 직접 열어 주세요.",
+      });
+      return;
+    }
+    toast.success("제미나이가 열립니다", {
+      description: saved
+        ? "클립(+) 아이콘으로 방금 저장된 녹음 파일을 첨부하세요. 프롬프트는 자동 입력·복사됨."
+        : "녹음 파일 저장에 실패했습니다. '파일 저장' 버튼으로 저장한 뒤 첨부하세요.",
+    });
+  };
+
+  const share = async () => {
+    if (!file) return;
+    await copyPrompt();
     try {
       await navigator.share({ files: [file], title: meta.title || "회의 녹음", text: prompt });
-      toast.success("공유 시트에서 제미나이를 선택하세요", {
-        description: "요약 요청 문구는 클립보드에 복사했습니다.",
-      });
     } catch {
-      /* 사용자가 취소한 경우 */
+      /* 사용자가 취소했거나 지원되지 않음 */
     }
   };
 
   const download = () => {
-    if (!file || !url) return;
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    a.click();
-    void navigator.clipboard?.writeText(prompt).catch(() => undefined);
-    toast.success("녹음 파일을 저장했습니다", {
-      description: "제미나이 앱에서 파일을 첨부하세요. 요약 문구는 복사됨.",
-    });
+    const saved = saveFile();
+    void copyPrompt();
+    if (saved) {
+      toast.success("녹음 파일을 저장했습니다", {
+        description: "제미나이 앱에서 파일을 첨부하세요. 요약 문구는 복사됨.",
+      });
+    } else {
+      toast.error("파일 저장이 차단되었습니다", {
+        description: "게시된 주소를 크롬에서 직접 열어 다시 시도해 주세요.",
+      });
+    }
   };
 
   return (
@@ -180,33 +223,44 @@ export function MeetingRecorder({ meta }: Props) {
         )}
 
         {file ? (
-          canShare ? (
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => void share()}
+              onClick={openGemini}
               className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
             >
               <Sparkles className="size-4" />
               제미나이로 요약
             </button>
-          ) : (
+
+            {canShare ? (
+              <button
+                type="button"
+                onClick={() => void share()}
+                className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-foreground"
+              >
+                <Share2 className="size-4" />
+                공유
+              </button>
+            ) : null}
+
             <button
               type="button"
               onClick={download}
               className="flex items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm text-foreground"
             >
               <Download className="size-4" />
-              녹음 파일 저장
+              파일 저장
             </button>
-          )
+          </div>
         ) : null}
       </div>
 
       <p className="mt-2 text-xs text-muted-foreground">
-        {file && !canShare
-          ? "이 기기에서는 파일 공유가 지원되지 않습니다. 파일을 저장한 뒤 제미나이 앱에서 첨부하세요. "
+        {file
+          ? "‘제미나이로 요약’을 누르면 녹음 파일이 저장되고, 프롬프트가 입력된 제미나이가 열립니다. 제미나이에서 클립(+) 아이콘으로 저장된 파일을 첨부하세요. "
           : ""}
-        녹음은 이 화면을 벗어나거나 앱을 다시 열면 사라집니다. 필요하면 먼저 공유·저장하세요.
+        녹음은 화면을 벗어나면 사라집니다. 요약 전에 먼저 저장·공유하세요.
       </p>
     </section>
   );

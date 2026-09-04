@@ -22,7 +22,7 @@ export const Route = createFileRoute("/meetings")({
   component: MeetingsPage,
 });
 
-const FIELDS = ["일시 / 장소", "참석자", "안건"] as const;
+
 
 function MeetingsPage() {
   const { id } = Route.useSearch();

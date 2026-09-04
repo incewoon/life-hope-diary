@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Download, Mic, Sparkles, Square } from "lucide-react";
+import { Download, Mic, Share2, Sparkles, Square } from "lucide-react";
 import { toast } from "sonner";
 
 function pad(n: number) {

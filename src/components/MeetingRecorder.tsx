@@ -65,7 +65,8 @@ export function MeetingRecorder({ meta }: Props) {
       return;
     }
 
-    const recorder = new MediaRecorder(stream);
+    const preferred = pickMimeType();
+    const recorder = new MediaRecorder(stream, preferred ? { mimeType: preferred } : undefined);
     chunksRef.current = [];
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);

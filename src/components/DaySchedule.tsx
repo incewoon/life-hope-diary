@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { addHours, format, isSameDay } from "date-fns";
-import { ko } from "date-fns/locale";
+
 import { CalendarPlus, Trash2 } from "lucide-react";
 
 import { DateTimeRow } from "@/components/DateTimePicker";

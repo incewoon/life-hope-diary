@@ -36,6 +36,7 @@ export function MeetingRecorder({ meta }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);

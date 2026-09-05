@@ -36,6 +36,7 @@ export function MeetingRecorder({ meta }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -83,6 +84,7 @@ export function MeetingRecorder({ meta }: Props) {
       urlRef.current = next;
       setFile(new File([blob], name, { type: mime }));
       setUrl(next);
+      setSaved(false);
       stream.getTracks().forEach((t) => t.stop());
     };
 
@@ -90,6 +92,7 @@ export function MeetingRecorder({ meta }: Props) {
     setElapsed(0);
     setFile(null);
     setUrl(null);
+    setSaved(false);
     recorder.start();
     setRecording(true);
   }, [meta.title]);
@@ -145,13 +148,27 @@ export function MeetingRecorder({ meta }: Props) {
     }
   };
 
-  /** 주 동작: 파일 저장 + 프롬프트 복사 후 제미나이를 프롬프트가 채워진 상태로 연다 */
-  const openGemini = () => {
+  /** 1단계: 프롬프트 복사 + 녹음 파일 저장 (제미나이는 아직 열지 않음 — 저장 승인 팝업이 가려지지 않게) */
+  const prepareForGemini = () => {
     if (!file) return;
+    void copyPrompt();
+    const ok = saveFile();
+    if (ok) {
+      setSaved(true);
+      toast.success("녹음 파일 저장을 시작했습니다", {
+        description: "저장 승인 팝업을 승인한 뒤 ‘제미나이 열기’ 버튼을 누르세요.",
+      });
+    } else {
+      toast.error("파일 저장이 차단되었습니다", {
+        description: "게시된 주소를 크롬에서 직접 열어 다시 시도해 주세요.",
+      });
+    }
+  };
+
+  /** 2단계: 저장 승인 후 사용자 클릭으로 제미나이를 프롬프트가 채워진 상태로 연다 */
+  const launchGemini = () => {
     const geminiUrl = `https://gemini.google.com/app?q=${encodeURIComponent(urlPrompt)}`;
     const win = window.open(geminiUrl, "_blank", "noopener");
-    const saved = saveFile();
-    void copyPrompt();
     if (!win) {
       toast.error("제미나이 창을 열지 못했습니다", {
         description: "브라우저의 팝업 차단을 해제하거나 게시된 주소를 크롬에서 직접 열어 주세요.",
@@ -159,9 +176,7 @@ export function MeetingRecorder({ meta }: Props) {
       return;
     }
     toast.success("제미나이가 열립니다", {
-      description: saved
-        ? "클립(+) 아이콘으로 방금 저장된 녹음 파일을 첨부하세요. 프롬프트는 자동 입력·복사됨."
-        : "녹음 파일 저장에 실패했습니다. '파일 저장' 버튼으로 저장한 뒤 첨부하세요.",
+      description: "클립(+) 아이콘으로 방금 저장된 녹음 파일을 첨부하세요. 프롬프트는 자동 입력·복사됨.",
     });
   };
 
@@ -224,14 +239,25 @@ export function MeetingRecorder({ meta }: Props) {
 
         {file ? (
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={openGemini}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
-            >
-              <Sparkles className="size-4" />
-              제미나이로 요약
-            </button>
+            {saved ? (
+              <button
+                type="button"
+                onClick={launchGemini}
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Sparkles className="size-4" />
+                제미나이 열기 (2/2)
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={prepareForGemini}
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Sparkles className="size-4" />
+                제미나이로 요약 (1/2) 파일 저장
+              </button>
+            )}
 
             {canShare ? (
               <button
@@ -258,7 +284,9 @@ export function MeetingRecorder({ meta }: Props) {
 
       <p className="mt-2 text-xs text-muted-foreground">
         {file
-          ? "‘제미나이로 요약’을 누르면 녹음 파일이 저장되고, 프롬프트가 입력된 제미나이가 열립니다. 제미나이에서 클립(+) 아이콘으로 저장된 파일을 첨부하세요. "
+          ? saved
+            ? "파일 저장을 승인했다면 ‘제미나이 열기’를 누르세요. 제미나이에서 클립(+) 아이콘으로 저장된 파일을 첨부하면 됩니다. "
+            : "‘제미나이로 요약’을 누르면 먼저 녹음 파일 저장과 프롬프트 복사가 진행됩니다. 저장 승인 후 ‘제미나이 열기’ 버튼이 나타납니다. "
           : ""}
         녹음은 화면을 벗어나면 사라집니다. 요약 전에 먼저 저장·공유하세요.
       </p>

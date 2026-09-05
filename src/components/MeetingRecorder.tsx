@@ -84,6 +84,7 @@ export function MeetingRecorder({ meta }: Props) {
       urlRef.current = next;
       setFile(new File([blob], name, { type: mime }));
       setUrl(next);
+      setSaved(false);
       stream.getTracks().forEach((t) => t.stop());
     };
 
@@ -91,6 +92,7 @@ export function MeetingRecorder({ meta }: Props) {
     setElapsed(0);
     setFile(null);
     setUrl(null);
+    setSaved(false);
     recorder.start();
     setRecording(true);
   }, [meta.title]);

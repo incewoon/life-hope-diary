@@ -239,14 +239,25 @@ export function MeetingRecorder({ meta }: Props) {
 
         {file ? (
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={openGemini}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
-            >
-              <Sparkles className="size-4" />
-              제미나이로 요약
-            </button>
+            {saved ? (
+              <button
+                type="button"
+                onClick={launchGemini}
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Sparkles className="size-4" />
+                제미나이 열기 (2/2)
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={prepareForGemini}
+                className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                <Sparkles className="size-4" />
+                제미나이로 요약 (1/2) 파일 저장
+              </button>
+            )}
 
             {canShare ? (
               <button
@@ -273,7 +284,9 @@ export function MeetingRecorder({ meta }: Props) {
 
       <p className="mt-2 text-xs text-muted-foreground">
         {file
-          ? "‘제미나이로 요약’을 누르면 녹음 파일이 저장되고, 프롬프트가 입력된 제미나이가 열립니다. 제미나이에서 클립(+) 아이콘으로 저장된 파일을 첨부하세요. "
+          ? saved
+            ? "파일 저장을 승인했다면 ‘제미나이 열기’를 누르세요. 제미나이에서 클립(+) 아이콘으로 저장된 파일을 첨부하면 됩니다. "
+            : "‘제미나이로 요약’을 누르면 먼저 녹음 파일 저장과 프롬프트 복사가 진행됩니다. 저장 승인 후 ‘제미나이 열기’ 버튼이 나타납니다. "
           : ""}
         녹음은 화면을 벗어나면 사라집니다. 요약 전에 먼저 저장·공유하세요.
       </p>
